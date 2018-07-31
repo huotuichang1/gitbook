@@ -5,8 +5,6 @@ description: '21212'
 # page1
 
 ```c
-212121
+int a = 0;
 ```
-
-
 
