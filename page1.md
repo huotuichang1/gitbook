@@ -6,5 +6,6 @@ description: '21212'
 
 ```c
 int a = 0;
+b = 0;
 ```
 
