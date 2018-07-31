@@ -8,5 +8,3 @@
 
 ## 张洁草稿
 
-* [测试](zhang-jie-cao-gao/ce-shi.md)
-
