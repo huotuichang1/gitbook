@@ -4,7 +4,8 @@
 
 ## 天赐草稿
 
-* [Microphone Array](tian-ci-cao-gao/microphone-array.md)
+* [简介](tian-ci-cao-gao/microphone-array.md)
+* [第一章](tian-ci-cao-gao/untitled.md)
 
 ## 张洁草稿
 
