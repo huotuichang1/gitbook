@@ -111,5 +111,17 @@ $$
 
 ![&#x56FE;1 &#x4E00;&#x7EF4;&#x7EBF;&#x6027;&#x5B54;&#x5F84;&#x6240;&#x63A5;&#x6536;&#x5230;&#x7684;&#x4FE1;&#x53F7;](../.gitbook/assets/20140331132040265.png)
 
-　　孔径的响应是频率和入射方向的函数，被称为Directivity Pattern 或beam pattern。通过求解波动方程可以推导出，Directivity Pattern 与孔径函数为傅里叶变化关系。远场条件下接收孔径的Directivity Pattern可以表示为
+　　孔径的响应是频率和入射方向的函数，被称为Directivity Pattern 或beam pattern。通过求解波动方程可以推导出，Directivity Pattern 与孔径函数为傅里叶变化关系。远场条件下接收孔径的Directivity Pattern可以表示为：
+
+$$
+D_R(f,\alpha)=F_r\{A_R(f,\overrightarrow r)\}\\=\int_{-\infty}^{\infty}A_R(f,\overrightarrow r)e^{j2\pi \overrightarrow \alpha . \overrightarrow r }d\overrightarrow r
+$$
+
+　　其中 $$F_r\{.\}$$ 是三维的傅里叶变换，
+
+$$
+\overrightarrow r =\left[\begin{matrix}x_\alpha \\y_\alpha\\z_\alpha\end{matrix}\right]
+$$
+
+　　 $$\overrightarrow r$$ 是点在孔径上的空间位置。
 
