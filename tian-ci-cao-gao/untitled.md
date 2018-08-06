@@ -139,5 +139,46 @@ $$
 
 　　为了获得Directivity Pattern的一些特性，我们把问题简化为沿着x轴方向的长度为L的一维线性孔径。如下图所述：
 
-![](../.gitbook/assets/20140331132158796.png)
+![&#x4E00;&#x7EF4;&#x7EBF;&#x6027;&#x5B54;&#x5F84;](../.gitbook/assets/20140331132158796.png)
+
+
+
+$$
+\overrightarrow r = \left [ \begin{matrix} x_a \\0\\0\end{matrix}\right]
+$$
+
+　　Directivity Pattern简化为:
+
+$$
+D_R(f,\alpha_x)=\int^{L/2}_{-L/2}A_R(f,x_a)e^{j2\pi \alpha_xx_{\alpha}}dx_a
+$$
+
+$$
+\alpha_x=\frac{sin\theta cos\phi}{\lambda}
+$$
+
+　　如果我们将上面的式子用 $$\theta$$ 和 $$\varphi$$ 来表达，则有：
+
+$$
+D_R(f,\theta,\varphi)=\int^{L/2}_{-L/2}A_R(f,x_\alpha)e^{j\frac{2\pi}{\lambda}sin\theta cos\varphi x_\alpha}dx_\alpha
+$$
+
+　　上面表达式是在平面波假设的条件下得到的，因此只适用于远场条件。对于线性孔径，当满足下面条件时可以认为满足远场条件：
+
+$$
+|r|>\frac{2L^2}{\lambda}
+$$
+
+　　我们考虑一个远场条件下的简单情况：线性孔径，孔径函数不随频率位置变化，所以，孔径函数可以写成：
+
+$$
+A_R(x_\alpha)=rect(x_\alpha/L)
+$$
+
+$$
+rect(x/L)=\left\{\begin{matrix}1\quad |x|\leq L/2 \\
+0\quad |x|\geq L/2\end{matrix}\right.
+$$
+
+
 
