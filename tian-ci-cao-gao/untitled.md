@@ -81,11 +81,11 @@ $$
 
 　　为了简化问题，上面的讨论中假设介质是各项同性、无耗散的，同时忽略了色散、散射和波速的变化。
 
-## ３．连续孔径
+## 3.连续孔径
 
 　　术语“孔径”是指发射或接受波的空间区域。发射孔径通常被称为主动孔径\(active aperture\)，接受孔径通常被称为被动孔径\(passive aperture\)。比如说，在光学，孔径可以是透明隔板上的一个孔。在电磁学中，孔径可以表示电磁天线。声学上，孔径则是一个将声信号转换为电信号的电声传感器\(麦克风\)或者是一个将电信号转换为声音信号的设备\(扬声器\)。
 
-### 3.1.　孔径函数
+### 3.1.孔径函数
 
 　　考虑一个体积为V的接受孔径， $$x(t,\overrightarrow r)$$ 表示在时间t和空间r处信号的值。考虑接收孔径在r处的一个无限小的体积dV的冲击响应为 $$a(t,\overrightarrow r)$$ ，那么接收到的信号可以用卷积表示
 
@@ -105,7 +105,7 @@ $$
 y(t) =\int \int_V \int x_R(t,\overrightarrow r)dV
 $$
 
-### 3.2 Directivity Pattern
+### 3.2. Directivity Pattern
 
 　　一个接收孔径的响应是有方向性的，因为对于不同方向传来的信号来说孔径所张开的立体角是不同的。图 1 给出了一维线性孔径接收平面波信号的图示。
 
@@ -124,4 +124,20 @@ $$
 $$
 
 　　 $$\overrightarrow r$$ 是点在孔径上的空间位置。
+
+$$
+\overrightarrow{\alpha}=\overrightarrow{f}\beta\\=\frac{1}{\lambda}[\quad sin\theta cos\phi \quad sin\theta sin\phi \quad cos\theta \quad]
+$$
+
+　　这是波的方向矢量， $$\theta$$ 和 $$\varphi$$ 含义如下图：
+
+![](../.gitbook/assets/20140331132124890.png)
+
+　　另外我们需要注意到的是上述方程中的频率与波长有依赖性 $$\lambda=c/f$$ 。
+
+### 3.3.  线性孔径
+
+　　为了获得Directivity Pattern的一些特性，我们把问题简化为沿着x轴方向的长度为L的一维线性孔径。如下图所述：
+
+![](../.gitbook/assets/20140331132158796.png)
 
