@@ -180,5 +180,16 @@ rect(x/L)=\left\{\begin{matrix}1\quad |x|\leq L/2 \\
 0\quad |x|\geq L/2\end{matrix}\right.
 $$
 
+　获得的Directivity Pattern为
+
+$$
+D_R(f,\alpha_x)=F_r\{rect(x_\alpha/L)\}=Lsinc(\alpha_xL)\\
+sinc(x)=\frac{sin(x)}{x}
+$$
+
+　下面的图是均匀孔径函数和相对应的Directivity Pattern图形。我们可以看出Directivity Pattern的零点分布在 $$\alpha_x=m\lambda/L$$ ， $$m$$ 为整数。Directivity Pattern中范围在 $$-\lambda/L\leq \alpha_x \leq \lambda/L$$ 之间的区域被称为主瓣，主瓣的范围被称作波束宽度。因此，线性孔径的波束宽度为 $$2\lambda/L$$ ,也可以写成 $$2c/fL$$ 。由此，我们也可以看到，波束宽度反比与 $$f*L$$ 。因此，对于一个固定的孔径长度，频率越高，波束宽度越窄。
+
+![&#x5747;&#x5300;&#x5B54;&#x5F84;&#x51FD;&#x6570;&#x548C;&#x5BF9;&#x5E94;&#x7684;Directivity Pattern&#x56FE;&#x5F62;](../.gitbook/assets/20140331132646359.png)
+
 
 
