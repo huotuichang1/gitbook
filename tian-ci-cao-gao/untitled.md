@@ -190,5 +190,5 @@ $$
 sinc(x)=\frac{sin(x)}{x}
 $$
 
-
+　　下面是均匀孔径函数和相应的Directivity Pattern图形。可以看出Directivity Pattern的零点分布在 $$\alpha_x=m\lambda/L$$ ，m为整数。Directivity Pattern中范围在 $$-\lambda/L \leq \alpha_x \leq \lambda/L $$
 
