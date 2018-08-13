@@ -81,11 +81,11 @@ $$
 
 　　为了简化问题，上面的讨论中假设介质是各项同性、无耗散的，同时忽略了色散、散射和波速的变化。
 
-## 3.连续孔径
+## ３．连续孔径
 
 　　术语“孔径”是指发射或接受波的空间区域。发射孔径通常被称为主动孔径\(active aperture\)，接受孔径通常被称为被动孔径\(passive aperture\)。比如说，在光学，孔径可以是透明隔板上的一个孔。在电磁学中，孔径可以表示电磁天线。声学上，孔径则是一个将声信号转换为电信号的电声传感器\(麦克风\)或者是一个将电信号转换为声音信号的设备\(扬声器\)。
 
-### 3.1.孔径函数
+### 3.1.　孔径函数
 
 　　考虑一个体积为V的接受孔径， $$x(t,\overrightarrow r)$$ 表示在时间t和空间r处信号的值。考虑接收孔径在r处的一个无限小的体积dV的冲击响应为 $$a(t,\overrightarrow r)$$ ，那么接收到的信号可以用卷积表示
 
@@ -105,7 +105,7 @@ $$
 y(t) =\int \int_V \int x_R(t,\overrightarrow r)dV
 $$
 
-### 3.2. Directivity Pattern
+### 3.2 Directivity Pattern
 
 　　一个接收孔径的响应是有方向性的，因为对于不同方向传来的信号来说孔径所张开的立体角是不同的。图 1 给出了一维线性孔径接收平面波信号的图示。
 
@@ -126,70 +126,69 @@ $$
 　　 $$\overrightarrow r$$ 是点在孔径上的空间位置。
 
 $$
-\overrightarrow{\alpha}=\overrightarrow{f}\beta\\=\frac{1}{\lambda}[\quad sin\theta cos\phi \quad sin\theta sin\phi \quad cos\theta \quad]
+\alpha = f\beta \\
+= \frac{1}{\lambda}[sin\theta cos \phi \quad sin\theta sin\phi \quad cos\theta]
 $$
 
-　　这是波的方向矢量， $$\theta$$ 和 $$\varphi$$ 含义如下图：
+　　这是波的方向矢量。 $$\theta,\phi$$ 的含义如下图：
 
-![](../.gitbook/assets/20140331132124890.png)
+![&#xFF08;&#x7403;&#x5750;&#x6807;&#x7CFB;&#x4E2D;&#x7684;&#x503C;&#xFF09;](../.gitbook/assets/20140331132124890.png)
 
-　　另外我们需要注意到的是上述方程中的频率与波长有依赖性 $$\lambda=c/f$$ 。
+### 3.3.线性孔径
 
-### 3.3.  线性孔径
-
-　　为了获得Directivity Pattern的一些特性，我们把问题简化为沿着x轴方向的长度为L的一维线性孔径。如下图所述：
+　　为了获得Directivity Pattern 的一些特性。我们把问题简化为沿着x轴方向的一维线性孔径，孔径长度L，如图所示。
 
 ![&#x4E00;&#x7EF4;&#x7EBF;&#x6027;&#x5B54;&#x5F84;](../.gitbook/assets/20140331132158796.png)
 
+此时我们的 $$\overrightarrow r = \left[ \begin{matrix}x_\alpha \\ 0 \\0 \end{matrix}\right]$$ 
 
-
-$$
-\overrightarrow r = \left [ \begin{matrix} x_a \\0\\0\end{matrix}\right]
-$$
-
-　　Directivity Pattern简化为:
+Directivity Pattern 简化为:
 
 $$
-D_R(f,\alpha_x)=\int^{L/2}_{-L/2}A_R(f,x_a)e^{j2\pi \alpha_xx_{\alpha}}dx_a
+D_R(f,\alpha_x)=F_r\{A_R(f,x_\alpha)\}\\
+=\int^{\infty}_{-\infty}A_R(f,x_\alpha)e^{j2\pi \alpha_x . x_\alpha}dx_\alpha
 $$
 
 $$
-\alpha_x=\frac{sin\theta cos\phi}{\lambda}
+\alpha_x = \frac{sin\theta cos\phi}{\lambda}
 $$
 
-　　如果我们将上面的式子用 $$\theta$$ 和 $$\varphi$$ 来表达，则有：
+　　如果我们将上面的式子用 $$\theta,\phi$$ 来表达
 
 $$
-D_R(f,\theta,\varphi)=\int^{L/2}_{-L/2}A_R(f,x_\alpha)e^{j\frac{2\pi}{\lambda}sin\theta cos\varphi x_\alpha}dx_\alpha
+D_R(f,\theta,\phi)=\int_{-L/2}^{L/2}A_R(f,x_\alpha)e^{j2\pi sin\theta cos\phi.x_\alpha}dx_\alpha
 $$
 
-　　上面表达式是在平面波假设的条件下得到的，因此只适用于远场条件。对于线性孔径，当满足下面条件时可以认为满足远场条件：
+　　上面表达式是在平面波假设的条件下得到的，因此只适用于远场条件。对于线性孔径，当满足下面条件时可以认为满足远场条件。
 
 $$
 |r|>\frac{2L^2}{\lambda}
 $$
 
-　　我们考虑一个远场条件下的简单情况：线性孔径，孔径函数不随频率位置变化，所以，孔径函数可以写成：
+　　再次简化，线性孔径，孔径函数不随频率位置变化。因此，孔径函数可以写为：
 
 $$
-A_R(x_\alpha)=rect(x_\alpha/L)
+A_R(x_\alpha)= rect(x_\alpha/L)
 $$
 
-$$
-rect(x/L)=\left\{\begin{matrix}1\quad |x|\leq L/2 \\
-0\quad |x|\geq L/2\end{matrix}\right.
-$$
-
-　获得的Directivity Pattern为
+　　其中：
 
 $$
-D_R(f,\alpha_x)=F_r\{rect(x_\alpha/L)\}=Lsinc(\alpha_xL)\\
+rect(x/L)=\begin{cases}1 \quad |x| \leq L/2 \\
+0 \quad |x| \geq L/2\end{cases}
+$$
+
+　　获得的Directivity Pattern为
+
+$$
+D_R(f,\alpha_x)=F_r\{rect(x_\alpha/L)\}=Lsinc(\alpha_xL)
+$$
+
+　　其中
+
+$$
 sinc(x)=\frac{sin(x)}{x}
 $$
-
-　下面的图是均匀孔径函数和相对应的Directivity Pattern图形。我们可以看出Directivity Pattern的零点分布在 $$\alpha_x=m\lambda/L$$ ， $$m$$ 为整数。Directivity Pattern中范围在 $$-\lambda/L\leq \alpha_x \leq \lambda/L$$ 之间的区域被称为主瓣，主瓣的范围被称作波束宽度。因此，线性孔径的波束宽度为 $$2\lambda/L$$ ,也可以写成 $$2c/fL$$ 。由此，我们也可以看到，波束宽度反比与 $$f*L$$ 。因此，对于一个固定的孔径长度，频率越高，波束宽度越窄。
-
-![&#x5747;&#x5300;&#x5B54;&#x5F84;&#x51FD;&#x6570;&#x548C;&#x5BF9;&#x5E94;&#x7684;Directivity Pattern&#x56FE;&#x5F62;](../.gitbook/assets/20140331132646359.png)
 
 
 
