@@ -192,3 +192,7 @@ $$
 
 　　下面是均匀孔径函数和相应的Directivity Pattern图形。可以看出Directivity Pattern的零点分布在 $$\alpha_x=m\lambda/L$$ ，m为整数。Directivity Pattern中范围在 $$-\lambda/L \leq \alpha_x \leq \lambda/L $$之间的区域被称为主瓣。主瓣的范围被称作波束宽度。因此，我们看到线性孔径的波束宽度为 $$2\lambda/L$$ ，也可以写为 $$2c/fL$$ 。我们可以发现波束宽度反比与 $$fL$$ 。因此，对于固定的孔径长度，频率越高，波束宽度越窄。
 
+![&#x5747;&#x5300;&#x5B54;&#x5F84;&#x51FD;&#x6570;&#x548C;Directivity Pattern](../.gitbook/assets/20140331132646359%20%281%29.png)
+
+　　通常我们考虑孔径的Directivity Pattern的归一化版本。
+
