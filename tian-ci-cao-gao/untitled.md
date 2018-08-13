@@ -4,7 +4,7 @@ description: '麦克风阵列物理结构简介，主要内容源于Iain McCowan
 
 # 第一章
 
-## 1.简介
+## 　　1.简介
 
 　　这里主要描述麦克风阵列技术和波束形成理论的一些基础知识。所谓麦克风阵列就是放置在空间中不同位置的多个麦克风。根据声波传导的原理，利用多个麦克风收集到的信号可以将某一方向传来的声音增强或抑制。利用这种方法，麦克风阵列可以将噪声环境中特定声音信号有效的增强。更进一步来说，这种增强效应只依赖与声源所在的位置，对噪声的类型、频谱等没有特殊的要求，因此可以用在非常广的应用领域。由于麦克风阵列技术具有很好的抑制噪声的能力，又不需要麦克风时刻指向声源方向，因此在语音处理领域具有非常好的前景。
 
@@ -190,5 +190,5 @@ $$
 sinc(x)=\frac{sin(x)}{x}
 $$
 
-　　下面是均匀孔径函数和相应的Directivity Pattern图形。可以看出Directivity Pattern的零点分布在 $$\alpha_x=m\lambda/L$$ ，m为整数。Directivity Pattern中范围在 $$-\lambda/L \leq \alpha_x \leq \lambda/L $$
+　　下面是均匀孔径函数和相应的Directivity Pattern图形。可以看出Directivity Pattern的零点分布在 $$\alpha_x=m\lambda/L$$ ，m为整数。Directivity Pattern中范围在 $$-\lambda/L \leq \alpha_x \leq \lambda/L $$之间的区域被称为主瓣。主瓣的范围被称作波束宽度。因此，我们看到线性孔径的波束宽度为 $$2\lambda/L$$ ，也可以写为 $$2c/fL$$ 。我们可以发现波束宽度反比与 $$fL$$ 。因此，对于固定的孔径长度，频率越高，波束宽度越窄。
 
