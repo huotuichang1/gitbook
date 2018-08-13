@@ -194,5 +194,17 @@ $$
 
 ![&#x5747;&#x5300;&#x5B54;&#x5F84;&#x51FD;&#x6570;&#x548C;Directivity Pattern](../.gitbook/assets/20140331132646359%20%281%29.png)
 
-　　通常我们考虑孔径的Directivity Pattern的归一化版本。
+　　通常我们考虑孔径的Directivity Pattern的归一化版本。因为归一化后可以反映不同角度入射的声波的相对响应。考虑到sinc函数满足 $$-1\leq sinc(x) \leq 1$$ ，Directivity Pattern最大可能值是 $$D_{max}=L$$ 。归一化后的Directivity Pattern为：
+
+$$
+D_N(f,\alpha_x)=\frac{D_R(f,\alpha_x)}{D_{max}}=sinc(\alpha_xL)
+$$
+
+　　水平方向上可表示为：
+
+$$
+D_N(f,\frac{\pi}{2},\phi)=sinc(\frac{L}{\lambda}cos\phi)
+$$
+
+
 
