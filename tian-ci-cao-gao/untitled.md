@@ -212,6 +212,7 @@ $$
 
 　　　　理论上Directivity Pattern的参数可以取任何值，但是实际上 $$\alpha_x=sin\theta cos\phi$$ ,被限定到 $$-1\leq \alpha_x \leq 1 $$ 。这个区间被称为孔径的可见区域。这时，我们考虑水平方向的Directivity Pattern,此时 $$\theta = \frac{\pi}{2},\alpha_x = 0$$ 。对应的是 $$\phi = \frac{\pi}{2}or \phi=\frac{3\pi}{2}$$ 。这代表声源在孔径的侧面。同理， $$\alpha_x =\pm 1\quad -> \quad \phi=0,\phi=\pi$$ 。也就是声源正对孔径。
 
-  
-　　
+## 4.离散传感器阵列
+
+　　传感器阵列（麦克风阵列）可以认为是连续孔径的采样版本，其中孔径仅在有限数量的离散点处激发。
 
