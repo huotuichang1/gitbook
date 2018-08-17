@@ -264,5 +264,7 @@ $$
 D(f,\phi)=\sum_{n=-\frac{N-1}{2}}^{\frac{N-1}{2}}\omega(f)e^{-j\frac{2\pi f}{c}ndcos\phi}
 $$
 
+　　上式是线性等间距分布的麦克风阵列的Directivity Pattern，我们可以看到，Directivity Pattern取决于如下的几个条件：
+
 
 
