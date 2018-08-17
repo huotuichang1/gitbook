@@ -312,3 +312,29 @@ $$
 f_{x_{max}}=\frac{1}{\lambda_{min}}
 $$
 
+　　所以阵列间麦克风间距为
+
+$$
+d \leq \frac{\lambda_{min}}{2}
+$$
+
+　　这就是空间采样定理。为了避免空间信号的混叠，必须满足这个条件。下图是给出了水平方向上由于信号空间混叠而形成的Directivity Pattern。
+
+![](../.gitbook/assets/20141115094127036.png)
+
+### 4.3.阵列增益和方向系数
+
+　　传感器阵列有一个很重要的参数就是阵列增益，定义为阵列输出信号相对于参考传感器输出信号的信噪比的改善率：
+
+$$
+G_a=\frac{G_d}{G_n}
+$$
+
+　　其中 $$G_d$$ 是信号的增益， $$G_n$$ 是噪声的平均增益。diffuse噪声，指的是均匀时不变的各相同性的散射噪声。当处于这种噪声场时，阵列增益也称为factor of directivity。
+
+$$
+G_a(f,\theta_0,\phi_0)=\frac{|D(f,\theta_0,\phi_0)|^2}{\frac{1}{4\pi}\int_0^{2\pi}\int_0^{\pi}|D(f,\theta,\phi)|^2sin\theta d\theta d\phi}
+$$
+
+　　其中， $$\theta_0,\varphi_0$$ 为信号的方向。
+
