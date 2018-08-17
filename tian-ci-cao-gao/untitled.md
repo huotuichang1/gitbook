@@ -81,7 +81,7 @@ $$
 
 　　为了简化问题，上面的讨论中假设介质是各项同性、无耗散的，同时忽略了色散、散射和波速的变化。
 
-## ３．连续孔径
+## 3.连续孔径
 
 　　术语“孔径”是指发射或接受波的空间区域。发射孔径通常被称为主动孔径\(active aperture\)，接受孔径通常被称为被动孔径\(passive aperture\)。比如说，在光学，孔径可以是透明隔板上的一个孔。在电磁学中，孔径可以表示电磁天线。声学上，孔径则是一个将声信号转换为电信号的电声传感器\(麦克风\)或者是一个将电信号转换为声音信号的设备\(扬声器\)。
 
@@ -132,13 +132,13 @@ $$
 
 　　这是波的方向矢量。 $$\theta,\phi$$ 的含义如下图：
 
-![&#xFF08;&#x7403;&#x5750;&#x6807;&#x7CFB;&#x4E2D;&#x7684;&#x503C;&#xFF09;](../.gitbook/assets/20140331132124890.png)
+![&#xFF08;&#x7403;&#x5750;&#x6807;&#x7CFB;&#x4E2D;&#x7684;&#x503C;&#xFF09;](../.gitbook/assets/20140331132124890%20%281%29.png)
 
 ### 3.3.线性孔径
 
 　　为了获得Directivity Pattern 的一些特性。我们把问题简化为沿着x轴方向的一维线性孔径，孔径长度L，如图所示。
 
-![&#x4E00;&#x7EF4;&#x7EBF;&#x6027;&#x5B54;&#x5F84;](../.gitbook/assets/20140331132158796.png)
+![&#x4E00;&#x7EF4;&#x7EBF;&#x6027;&#x5B54;&#x5F84;](../.gitbook/assets/20140331132158796%20%281%29.png)
 
 此时我们的 $$\overrightarrow r = \left[ \begin{matrix}x_\alpha \\ 0 \\0 \end{matrix}\right]$$ 
 
@@ -206,5 +206,12 @@ $$
 D_N(f,\frac{\pi}{2},\phi)=sinc(\frac{L}{\lambda}cos\phi)
 $$
 
+　　下面是不同 $$L/\lambda$$ 条件下水平面上Directivity Pattern的极坐标表示。
 
+![&#x6C34;&#x5E73;&#x9762;&#x4E0A;Directivity Pattern&#x7684;&#x6781;&#x5750;&#x6807;&#x8868;&#x793A;](../.gitbook/assets/20140331132859187.png)
+
+　　　　理论上Directivity Pattern的参数可以取任何值，但是实际上 $$\alpha_x=sin\theta cos\phi$$ ,被限定到 $$-1\leq \alpha_x \leq 1 $$ 。这个区间被称为孔径的可见区域。这时，我们考虑水平方向的Directivity Pattern,此时 $$\theta = \frac{\pi}{2},\alpha_x = 0$$ 。对应的是 $$\phi = \frac{\pi}{2}or \phi=\frac{3\pi}{2}$$ 。这代表声源在孔径的侧面。同理， $$\alpha_x =\pm 1\quad -> \quad \phi=0,\phi=\pi$$ 。也就是声源正对孔径。
+
+  
+　　
 
