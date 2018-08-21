@@ -22,11 +22,94 @@ $$
 
 ![](../.gitbook/assets/20180818-101415-de-ping-mu-jie-tu.png)
 
-　　自然而然，我们想到在时域上的运算过于繁琐，可以将该延时求和波束形成器转换成频域形式进行处理计算。设声源到阵列的辐射角为 $$\theta$$ ，则方向矢量 $$\vec A(k,\theta)=[1,e^{j2\pi k\tau_1(\theta)},e^{j2\pi k\tau_2(\theta)},...,e^{j2\pi k\tau_M(\theta)}]$$ 。延时求和波束形成器的输出 $$\vec y(n)$$ 的频率描述 $$\vec Y(k)$$ 为：
+　　自然而然，我们想到在时域上的运算过于繁琐，可以将该延时求和波束形成器转换成频域形式进行处理计算。设声源到阵列的辐射角为 $$\theta$$ ，则方向矢量 $$\vec A(k,\theta)=[1,e^{j2\pi k\tau_1(\theta)},e^{j2\pi k\tau_2(\theta)},...,e^{j2\pi k\tau_M(\theta)}]$$ 。延时求和波束形成器的输出 $$ y(n)$$ 的频率描述 $$Y(k)$$ 为：
 
 $$
-\vec Y(k)=\frac{1}{M}\sum_{m=1}^{M}X_m(k)W_m(k)=\vec X(k) \vec W(k)
+Y(k)=\frac{1}{M}\sum_{m=1}^{M}X_m(k)W_m(k)=\vec X(k) \vec W(k)
 $$
 
 　　即为 $$X_m(k)$$在频域上的移项相加。 $$\vec X(k)$$ 是麦克风接收信号的频域形式， $$\vec W(k)$$ 是方向矢量，有等式 $$\vec  W(k)=\vec A(k,\theta)$$ 。基于延时-求和波束形成的声源定位方法是根据波束最大输出能量确定声源位置，即： $$\theta=arg max_\theta \sum_k \vec A^H(k,\theta) \vec R_{XX}(k) \vec A(k,\theta)$$ ，其中 $$ \vec R_{XX}(k)=E{\vec X(k) \vec X^T(k)}$$ 。需要注意到我们此时得到的只是声源的方向信息，并没有得到声源的距离。
+
+### 1.2.滤波求和波束形成
+
+　　 延时求和波束形成器实际上是一种滤波器系数恒定的固定波束形成器，在实际应用中，为适应噪声情况，更常使用滤波求和波束形成器。滤波求和波束形成器通过自适应地调整滤波器系数，使得波束主瓣对准来波方向,同时使得零陷\(NULL\)对准干扰方向。设阵列中每个滤波器阶数均为 $$L$$ ​,第​ $$m$$ 个滤波器的冲激响应为 $$h_{m,l}$$ ​，于是滤波求和波束形成器的时域描述为:
+
+$$
+y(n)=\sum^M_{m=1} \sum^{L-1}_{l=0} h_{m,l}x_m(n-l)
+$$
+
+　　输出信号 $$y(n)$$ 的频域描述 $$Y(k)$$ 为
+
+$$
+Y(k)=\sum_{m=1}^M H^*_m(k)X_m(k)=\vec H^H(k)\vec X(k), \quad k=1,......,K
+$$
+
+　　其中，​ $$X_M(k)$$ 和​ $$H_M(k)$$ 分别为​ $$x_m(n)$$ 和​ $$h_{m,l}$$ 的离散傅里叶变换。
+
+$$
+\vec X(k)=(X_1(k),......,X_M(k))^T\quad\quad\quad\quad\vec H(k)=(H_1(k),...,H_M(k))^T
+$$
+
+　　波束形成器的信噪比定义为
+
+$$
+SNR(k)=\frac{\vec H^H(k) \vec R_{XX}(k) \vec H(k)}{\vec H^H(k) \vec R_{NN}(k)\vec H(k)}-1
+$$
+
+　　基于信噪比最大准则，加权系数 $$H(k)$$ ​的计算等价于求解如下约束优化问题
+
+$$
+\left \{ 
+\begin{array}{c}
+max \quad \vec H^H(k)\vec R_{XX}(k)\vec H(k)\\
+
+\quad s.t. \quad \vec H^H(k)\vec R_{NN}(k)\vec H(k)=C
+
+\end{array}
+\right.
+$$
+
+　　滤波求和波束形成器的声源定位原理图如图所示。滤波求和波束形成器在进行时间校正的同时，还对信号进行滤波处理。
+
+$$
+Y(k)=\sum^M_{m=1}H_m(k)X_m(k)e^{j2\pi k\tau_m}
+$$
+
+　　其中 $$H_m(k)$$ 为第 $$m$$ 个麦克风接收信号的滤波器。 $$e^{j2\pi k\tau_m}$$ 是时延补偿量，保证频域信号的时间一致性。 $$Y(k)$$ 是某个频域上的信号幅度。
+
+![&#x6EE4;&#x6CE2;&#x6C42;&#x548C;&#x6CE2;&#x675F;&#x5F62;&#x6210;&#x5668;&#x6846;&#x56FE;](../.gitbook/assets/lv-bo-qiu-he-bo-shu-xing-cheng-qi-ding-wei.png)
+
+　　基于滤波求和波束形成器的声源定位方法可描述为：
+
+$$
+r_m(\vec q,k)=\sum^M_{m=1}H_m(k)|X_m(k)|e^{-j2\pi k\tau_m(q)}\\|r_m(q)|^2=\sum_k H(k)|r_m(\vec q,k)|^2\\
+\hat q=arg max_m|r_m(\vec q)|^2
+$$
+
+　　其中​ $$X_m(k)$$ 是k频率下第m个麦克风的信号幅度。而滤波求和波束形成器的波束响应 $$H(k,\theta) $$ 为
+
+$$
+H(k,\theta)=\sum_{m=1}^M \sum_{l=1}^Lh_{m,l}e^{-j2\pi(l-1)T}e^{-j2\pi kd_m sin\theta /c}
+$$
+
+　　该滤波求和波束形成器在保持非目标方向功率不变的情况下，使目标方向的功率最大，同理，也可以保持在目标方向上的信号功率不变，而使非目标方向上的干扰功率最小。即
+
+$$
+\left \{ 
+\begin{array}{c}
+min \quad \vec H^H(k)\vec R_{XX}(k)\vec H(k)\\
+
+\quad s.t. \quad \vec A^H(k,\theta)\vec H(k)=1
+
+\end{array}
+\right.
+$$
+
+　　其权值为：
+
+$$
+H(k)=\frac{\vec R^{-1}_{xx}\vec A(k,\theta)}{\vec A^H(k,\theta)\vec R_{xx}^{-1}(k)\vec A(k,\theta)}
+$$
+
+　　可以直观的看到相关矩阵
 
