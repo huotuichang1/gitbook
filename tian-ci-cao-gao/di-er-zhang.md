@@ -22,7 +22,11 @@ $$
 
 ![](../.gitbook/assets/20180818-101415-de-ping-mu-jie-tu.png)
 
-　　自然而然，我们想到在时域上的运算过于繁琐，可以将该延时求和波束形成器转换成频域形式进行处理计算。设声源到阵列的辐射角为 $$\theta$$ ，则方向矢量 $$A(k,\theta)=[1,e^{j2\pi k\tau_1(\theta)},e^{j2\pi k\tau_2(\theta)},...,e^{j2\pi k\tau_M(\theta)}]$$ 。示意图如下：
+　　自然而然，我们想到在时域上的运算过于繁琐，可以将该延时求和波束形成器转换成频域形式进行处理计算。设声源到阵列的辐射角为 $$\theta$$ ，则方向矢量 $$\vec A(k,\theta)=[1,e^{j2\pi k\tau_1(\theta)},e^{j2\pi k\tau_2(\theta)},...,e^{j2\pi k\tau_M(\theta)}]$$ 。延时求和波束形成器的输出 $$\vec y(n)$$ 的频率描述 $$\vec Y(k)$$ 为：
 
-　　
+$$
+\vec Y(k)=\frac{1}{M}\sum_{m=1}^{M}X_m(k)W_m(k)=\vec X(k) \vec W(k)
+$$
+
+　　即为 $$X_m(k)$$在频域上的移项相加。 $$\vec X(k)$$ 是麦克风接收信号的频域形式， $$\vec W(k)$$ 是方向矢量，有等式 $$\vec  W(k)=\vec A(k,\theta)$$ 。基于延时-求和波束形成的声源定位方法是根据波束最大输出能量确定声源位置，即： $$\theta=arg max_\theta \sum_k \vec A^H(k,\theta) \vec R_{XX}(k) \vec A(k,\theta)$$ ，其中 $$ \vec R_{XX}(k)=E{\vec X(k) \vec X^T(k)}$$ 。需要注意到我们此时得到的只是声源的方向信息，并没有得到声源的距离。
 
