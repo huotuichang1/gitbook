@@ -109,5 +109,29 @@ $$
 
 　　这里是完整的更新步骤。 $$\hat x^{'}_k$$ 是新的最优估计，我们会将其和 $$P_k^{'}$$一起放到下一个预测和更新方程中不断迭代。但有些时候我们仍会觉得这样的卡尔曼滤波不够准确。因此可以做一些改进。
 
-　　我们注意到在声源定位过程中为了将方位表示统一，我们需要对方位坐标做归一化处理。因此在卡尔曼滤波的预测迭代过程中我们也需要对我们得到的方位结果进行归一化。而对速度信息的处理亦然。（准确的说应为角动量）
+　　我们注意到在声源定位过程中为了将方位表示统一，我们需要对方位坐标做归一化处理。因此在卡尔曼滤波的预测迭代过程中我们也需要对我们预测和更新所得到的方位结果进行归一化。而对速度信息的处理亦然。（准确的说应为角动量），过程如下：
+
+```c
+        xx = kalman->x_llm1->array[0*(kalman->x_llm1->nCols)+0];
+        xy = kalman->x_llm1->array[1*(kalman->x_llm1->nCols)+0];
+        xz = kalman->x_llm1->array[2*(kalman->x_llm1->nCols)+0];
+        vx = kalman->x_llm1->array[3*(kalman->x_llm1->nCols)+0];
+        vy = kalman->x_llm1->array[4*(kalman->x_llm1->nCols)+0];
+        vz = kalman->x_llm1->array[5*(kalman->x_llm1->nCols)+0];
+        printf("xx %f xy %f xz %f vx %f vy %f vz %f\n",xx,xy,xz,vx,vy,vz);
+        norm2 = xx*xx + xy*xy + xz*xz;
+        norm = sqrtf(norm2);
+        proj = xx*vx + xy*vy + xz*vz;
+        printf("norm2 %f norm %f proj %f\n",norm2,norm,proj);
+        //归一化位置和速度信息计算（卡尔曼预测过程中）
+        kalman->x_llm1->array[0*(kalman->x_llm1->nCols)+0] = xx / (norm + obj->epsilon);
+        kalman->x_llm1->array[1*(kalman->x_llm1->nCols)+0] = xy / (norm + obj->epsilon);
+        kalman->x_llm1->array[2*(kalman->x_llm1->nCols)+0] = xz / (norm + obj->epsilon);
+        kalman->x_llm1->array[3*(kalman->x_llm1->nCols)+0] = vx - xx * proj / (norm2 + obj->epsilon);
+        kalman->x_llm1->array[4*(kalman->x_llm1->nCols)+0] = vy - xy * proj / (norm2 + obj->epsilon);
+        kalman->x_llm1->array[5*(kalman->x_llm1->nCols)+0] = vz - xz * proj / (norm2 + obj->epsilon);
+
+```
+
+
 
