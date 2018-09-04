@@ -109,7 +109,7 @@ $$
 
 　　这里是完整的更新步骤。 $$\hat x^{'}_k$$ 是新的最优估计，我们会将其和 $$P_k^{'}$$一起放到下一个预测和更新方程中不断迭代。但有些时候我们仍会觉得这样的卡尔曼滤波不够准确。因此可以做一些改进。
 
-　　我们注意到在声源定位过程中为了将方位表示统一，我们需要对方位坐标做归一化处理。因此在卡尔曼滤波的预测迭代过程中我们也需要对我们预测和更新所得到的方位结果进行归一化。而对速度信息的处理亦然。（准确的说应为角动量），是为了和位置信息的变化在同一尺度下而坐的处理。过程如下：
+　　我们注意到在声源定位过程中为了将方位表示统一，我们需要对方位坐标做归一化处理。因此在卡尔曼滤波的预测迭代过程中我们也需要对我们预测和更新所得到的方位结果进行归一化。而对速度信息的处理亦然。（准确的说应为角动量），是为了和位置信息的变化在同一尺度下而做这样的处理。过程如下：
 
 ```c
         xx = kalman->x_llm1->array[0*(kalman->x_llm1->nCols)+0];
@@ -133,5 +133,81 @@ $$
 
 ```
 
-　　为了防止数值溢出，给分母添加了一最小量。
+　　同时为了防止数值溢出，归一化过程中给分母添加了一最小量，确保数据不会溢出。
+
+　　与此同时，在从预测到更新的过程中，我们利用预测的数据计算相关性得到一个权值项。这里借代码分析：
+
+```c
+void kalman2coherence_process(kalman2coherence_obj * obj, const kalman_obj * kalman, const pots_obj * pots, const unsigned int iTrack, coherences_obj * coherences) {
+
+        unsigned int iPot;
+        float B1, B2, B3, B4;
+        float weight;
+
+        // Compute mu_t
+        matrix_mul(obj->mu_t, obj->H, kalman->x_llm1);
+        matrix_transpose(obj->mu_t_t, obj->mu_t);        
+
+        // Compute sigma_t
+        matrix_mul(obj->HP, obj->H, kalman->P_llm1);
+        matrix_mul(obj->sigma_t, obj->HP, obj->Ht);
+        matrix_add(obj->sigma_t_epsilon, obj->sigma_t, obj->sigma_epsilon);
+
+        // Compute sigma_t^-1
+        matrix_inv(obj->sigma_t_inv, obj->sigma_t_epsilon);
+
+        // Compute sigma_t^-1 * mu_t
+        matrix_mul(obj->sigma_t_inv_mu_t, obj->sigma_t_inv, obj->mu_t);
+
+        // Compute B3
+        matrix_mul(obj->mu_t_t_sigma_t_inv_mu_t, obj->mu_t_t, obj->sigma_t_inv_mu_t);
+        B3 = obj->mu_t_t_sigma_t_inv_mu_t->array[0*(obj->mu_t_t_sigma_t_inv_mu_t->nCols)+0];
+
+        for (iPot = 0; iPot < pots->nPots; iPot++) {
+
+            // Compute mu_s
+            obj->mu_s->array[0*(obj->mu_s->nCols)+0] = pots->array[iPot*4+0];
+            obj->mu_s->array[1*(obj->mu_s->nCols)+0] = pots->array[iPot*4+1];
+            obj->mu_s->array[2*(obj->mu_s->nCols)+0] = pots->array[iPot*4+2];
+            matrix_transpose(obj->mu_s_t, obj->mu_s);    
+           
+            // Compute sigma_st^-1
+            matrix_add(obj->sigma_st_inv, obj->sigma_s_inv, obj->sigma_t_inv);
+
+            // Compute sigma_st
+            matrix_inv(obj->sigma_st, obj->sigma_st_inv);
+
+            // Compute sigma_s^-1 * mu_s
+            matrix_mul(obj->sigma_s_inv_mu_s, obj->sigma_s_inv, obj->mu_s);
+
+            // Compute (sigma_t^-1 * mu_t + sigma_s^-1 * mu_s)
+            matrix_add(obj->sigma_t_inv_mu_t_sigma_s_inv_mu_s, obj->sigma_t_inv_mu_t, obj->sigma_s_inv_mu_s);
+
+            // Compute mu_st = sigma_st * (sigma_t^-1 * mu_t + sigma_s^-1 * mu_s)
+            matrix_mul(obj->mu_st, obj->sigma_st, obj->sigma_t_inv_mu_t_sigma_s_inv_mu_s);
+            matrix_transpose(obj->mu_st_t, obj->mu_st);     
+
+            // Compute B1
+            B1 = logf(matrix_det(obj->sigma_st)) - logf(8.0f * M_PI * M_PI * M_PI * matrix_det(obj->sigma_t) * matrix_det(obj->sigma_s));
+
+            // Compute B2
+            matrix_mul(obj->sigma_st_inv_mu_st, obj->sigma_st_inv, obj->mu_st);
+            matrix_mul(obj->mu_st_t_sigma_st_inv_mu_st, obj->mu_st_t, obj->sigma_st_inv_mu_st);
+            B2 = obj->mu_st_t_sigma_st_inv_mu_st->array[0*(obj->mu_st_t_sigma_st_inv_mu_st->nCols)+0];
+
+            // Compute B4
+            matrix_mul(obj->mu_s_t_sigma_s_inv_mu_s, obj->mu_s_t, obj->sigma_s_inv_mu_s);
+            B4 = obj->mu_s_t_sigma_s_inv_mu_s->array[0*(obj->mu_s_t_sigma_s_inv_mu_s->nCols)+0];
+
+            // Compute weight
+            weight = expf(0.5f * (B1+B2-B3-B4));
+
+            coherences->array[iTrack * pots->nPots + iPot] = weight;
+
+        }
+
+    }
+```
+
+　　　　需要注意到是，这里计算的并不是卡尔曼滤波过程中的卡尔曼增益，而是由于我们的模型中需要同时定位多个声源，需要计算多个声源定位点对当前追踪过程分别贡献的影响所占的权重比。这是计算前置的相关性，然后在后面的mixture2mixture过程中，会利用类似马尔科夫过程的思路，计算当前的状态。（这部分没有论文支持，分析代码得出的，可能有误差。）
 
