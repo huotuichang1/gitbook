@@ -35,7 +35,7 @@ $$
 \hat{x}_k=\left[\begin{matrix}1\quad0\quad0\quad\Delta t\quad0\quad0\\0\quad1\quad0\quad0\quad\Delta t\quad0\\0\quad0\quad1\quad0\quad0\quad\Delta t\\0\quad0\quad0\quad1\quad0\quad0\\0\quad0\quad0\quad0\quad1\quad0\\0\quad0\quad0\quad0\quad0\quad1\end{matrix}\right]*\hat{x}_{k-1}=F_k\hat{x}_{k-1}
 $$
 
-　　这个代表的是声源位置的经验预测值。相对应的，这个状态对应的协方差应该表现如下:
+　　这个代表的是声源位置的经验预测值。相对应的，这个状态对应的协方差矩阵应该表现如下:
 
 $$
 P_k=F_kP_{k-1}F_k^T
@@ -136,8 +136,14 @@ $$
 　　同时为了防止数值溢出，归一化过程中给分母添加了一最小量，确保数据不会溢出。更直观的用公式表示：
 
 $$
-\hat x=\left[\begin{matrix}xx\\yy\\zz\\vx\\vy\\vz \end{matrix}\right]
+\\
+\hat x=\left[\begin{matrix}xx\\yy\\zz\\vx\\vy\\vz \end{matrix}\right]\\
+\hat x_{norm}=\left[\begin{matrix} \frac{xx}{\sqrt{xx^2+xy^2+xz^2}}\\\frac{xy}{\sqrt{xx^2+xy^2+xz^2}}\\\frac{xz}{\sqrt{xx^2+xy^2+xz^2}}\\vx-\frac{xx*(xx*vx+xy*vy+xz*vz)}{xx^2+xy^2+xz^2}\\vy-\frac{xy*(xx*vx+xy*vy+xz*vz)}{xx^2+xy^2+xz^2}\\vz-\frac{xz*(xx*vx+xy*vy+xz*vz)}{xx^2+xy^2+xz^2}\end{matrix}\right]
 $$
+
+　　这种归一化的操作实际上违反了卡尔曼滤波的基本假设，即所有的过程都是符合高斯的，并且系统是线性的。然而，在实践中，卡尔曼滤波方法仍然有效，因为这种归一化仅涉及方向和速度上的微小扰动，这使得操作带来的非线性部分可以忽略不计。与此同时一定程度上可以规避由于在定位过程中声源位置的不稳定在后面的更新过程中带来的非线性因素。
+
+　　考虑到我们需要解决的问题是多目标追踪卡尔曼滤波，我们需要一种方法来保证　　　
 
 　　与此同时，在从预测到更新的过程中，我们利用预测的数据计算相关性得到一个权值项。这里借代码分析：
 
