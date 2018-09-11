@@ -147,9 +147,7 @@ $$
 
 ![&#x6539;&#x8FDB;&#x7684;&#x591A;&#x76EE;&#x6807;3D&#x5361;&#x5C14;&#x66FC;&#x6EE4;&#x6CE2;&#x8FFD;&#x8E2A;](../.gitbook/assets/20180911-093937-ping-mu-jie-tu.png)
 
-　　我们也可以注意到其实改进就是在预测和更新过程中加入了归一化，ID交换，可能性和先验后验概率的计算。　　
-
-与此同时，在从预测到更新的过程中，我们利用预测的数据计算相关性得到一个权值项。这里借代码分析：
+　　我们注意到改进就是在预测和更新过程中加入了归一化，ID交换，可能性和先验后验概率的计算，以及声源的状态确认。这里借代码分析：
 
 ```c
 void kalman2coherence_process(kalman2coherence_obj * obj, const kalman_obj * kalman, const pots_obj * pots, const unsigned int iTrack, coherences_obj * coherences) {
