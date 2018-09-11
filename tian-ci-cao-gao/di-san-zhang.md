@@ -227,5 +227,5 @@ void kalman2coherence_process(kalman2coherence_obj * obj, const kalman_obj * kal
 
 ![](../.gitbook/assets/20180911-160640-ping-mu-jie-tu.png)
 
-
+　　我们可以直观的看到从麦克风信号，到潜在声源，到跟踪声源的过程。
 
