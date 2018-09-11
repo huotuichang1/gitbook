@@ -147,7 +147,7 @@ $$
 
 ![&#x6539;&#x8FDB;&#x7684;&#x591A;&#x76EE;&#x6807;3D&#x5361;&#x5C14;&#x66FC;&#x6EE4;&#x6CE2;&#x8FFD;&#x8E2A;](../.gitbook/assets/20180911-093937-ping-mu-jie-tu.png)
 
-　　我们注意到改进主要是在预测和更新过程中加入了归一化，ID交换，可能性和先验后验概率的计算，以及声源的状态确认。刚刚就是定位信息的归一化过程了。这里借代码分析：
+　　我们注意到改进主要是在预测和更新过程中加入了归一化，ID交换，可能性和先验后验概率的计算，以及声源的状态确认。刚刚就是定位信息的归一化过程了。这里借代码分析后面的过程：
 
 ```c
 void kalman2coherence_process(kalman2coherence_obj * obj, const kalman_obj * kalman, const pots_obj * pots, const unsigned int iTrack, coherences_obj * coherences) {
@@ -221,7 +221,7 @@ void kalman2coherence_process(kalman2coherence_obj * obj, const kalman_obj * kal
     }
 ```
 
-　　需要注意到是，这里计算的并不是卡尔曼滤波过程中的卡尔曼增益，而是在计算潜在声源和定位点之间的相关性。然后在后面的mixture2mixture过程中，会利用类似马尔科夫过程的思路，计算当前的状态。我们可以看到有先验后验概率的分别计算和状态转移过程。这个过程最后的我们会得到一个概率，这就是选择定位点作为校正的可信度。在模型中他被叫做活性。
+　　需要注意到是，这里计算的并不是卡尔曼滤波过程中的卡尔曼增益，而是在计算潜在声源和定位点之间的相关性。得到的是一个比例因子。而这个过程中实际计算的也只是mixture2mixture过程中用到的一个参数。下面详细说明这个过程：
 
-　　下面会详细说明这个过程。
+　　
 
