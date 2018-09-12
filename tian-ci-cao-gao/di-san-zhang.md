@@ -302,5 +302,111 @@ $$
 p(\lambda_v^l|\mathcal D)=\frac{\hat K}{K}(\frac{1}{4\pi})=\frac{\hat K}{4\pi K}
 $$
 
- 　　这代表未被认定为追踪点的概率。即弥散的概率。其中 $$\frac{1}{4\pi}$$ 代表完整球体上的均匀分布。
+ 　　这代表未被认定为追踪点的概率。即弥散的概率。其中 $$\frac{1}{4\pi}$$ 代表完整球体上的均匀分布。联合开头的能量判断和位置观察，我们可以把潜在声源分为三种：
+
+1. 错误的方向：测量信号是弥散的，同时声源未激活状态。
+2. 新的声源：测量信号是弥散的，同时声源处于激活状态。
+3. 跟踪声源 $$i$$ ：潜在声源方向对准了跟踪声源 $$i(\mathcal C_i)$$ 同时声源处于激活状态。
+
+![&#x6F5C;&#x5728;&#x58F0;&#x6E90;&#x72B6;&#x6001;&#x793A;&#x610F;](../.gitbook/assets/20180912-194533-ping-mu-jie-tu.png)
+
+　　用 $$\psi$$ 表示潜在声源。可能性 $$p(\psi_l^q|f_g(q))$$ 表示如下：
+
+$$
+p(\psi_v^l|f_g(v))=\left \{ \begin{aligned}p(\Lambda_v^l|\mathcal I)p(\lambda_v^l|\mathcal D) \quad f_g(v)=-2 \\ p(\Lambda_v^l|\mathcal A)p(\lambda_v^l|\mathcal D) \quad f_g(v)=-1 \\ p(\Lambda_v^l|\mathcal A)p(\lambda_v^l|\mathcal C_{f_g(v)}) \quad f_g(v)\geq1 \\ \end{aligned} \right .
+$$
+
+ 　　每一个单体的可能性乘积最终生成了最终的概率。上述部分的代码如下：
+
+```c
+ void mixture2mixture_process(mixture2mixture_obj * obj, mixture_obj * mixture, const pots_obj * pots, const coherences_obj * coherences, postprobs_obj * postprobs) {
+
+        unsigned int iPot;
+        unsigned int iTrack;
+        unsigned int iTrackNewFalse;
+        unsigned int iCombination;
+
+        signed int t;
+        float total;
+        unsigned char match;
+
+        // Compute likelihood计算可能性
+
+        // p(E^s_l|A), p(E^s_l|I) & p(z^s_l|D)
+
+        for (iPot = 0; iPot < mixture->nPots; iPot++) {
+
+            mixture->p_Ez_AICD[0 * pots->nPots + iPot] = gaussians_1d_eval(obj->active, pots->array[iPot * 4 + 3]);
+            mixture->p_Ez_AICD[1 * pots->nPots + iPot] = gaussians_1d_eval(obj->inactive, pots->array[iPot * 4 + 3]);
+            mixture->p_Ez_AICD[2 * pots->nPots + iPot] = obj->diffuse;
+
+        }
+
+        // p(z^s_l|C,t)
+
+        for (iTrack = 0; iTrack < mixture->nTracks; iTrack++) {
+
+            for (iPot = 0; iPot < mixture->nPots; iPot++) {
+
+                mixture->p_Ez_AICD[(3 + iTrack) * pots->nPots + iPot] = coherences->array[iTrack * mixture->nPots + iPot];
+
+            }
+
+        }
+
+        // p(E^s_l,z^s_l|phis_c)
+
+        for (iPot = 0; iPot < mixture->nPots; iPot++) {
+
+            for (iTrackNewFalse = 0; iTrackNewFalse < mixture->nTracksNewFalse; iTrackNewFalse++) {
+
+                t = (((signed int) iTrackNewFalse) - 2);
+
+                if (t == -2) {
+
+                    mixture->p_Eszs_phics[iTrackNewFalse * mixture->nPots + iPot] = mixture->p_Ez_AICD[1 * pots->nPots + iPot] * mixture->p_Ez_AICD[2 * pots->nPots + iPot];
+
+                }
+                else if (t == -1) {
+
+                    mixture->p_Eszs_phics[iTrackNewFalse * mixture->nPots + iPot] = mixture->p_Ez_AICD[0 * pots->nPots + iPot] * mixture->p_Ez_AICD[2 * pots->nPots + iPot];
+
+                }
+                else {
+
+                    mixture->p_Eszs_phics[iTrackNewFalse * mixture->nPots + iPot] = mixture->p_Ez_AICD[0 * pots->nPots + iPot] * mixture->p_Ez_AICD[(t + 3) * pots->nPots + iPot];
+
+                }
+
+            }
+
+        }
+```
+
+　　但如果只有刚刚得出的概率 $$p(\psi_l^q|f_g(q))$$ 是不够的。我们必须知道状态对潜在声源分别的概率。通过贝叶斯原理，我们可以得到：
+
+$$
+p(f_g|\psi^l)=\frac{p(\psi^l|f_g)p(f_g)}{\sum^G_{g=1}p(\psi^l|f_g)p(f_g)}
+$$
+
+ 　　此时我们需要一个先验概率表示三种状态：错误的方向，新的声源和跟踪声源。我们分别用 $$P_{false},P_{new},P_{track}$$ 来表示三种状态。
+
+$$
+p(f_g(v))=\left \{\begin{aligned} P_{false}\quad f_g(v)=-2 \\ P_{new}\quad f_g(v)=-1\\P_{track}\quad f_g(v)\geq 1\quad\end{aligned} \right .
+$$
+
+　　需要说明的是这些先验概率参数是预先设置好的，对追踪性能的表现有些许影响。而对每一个独立的标签其对应的组合的先验概率如下所示：
+
+$$
+p(f_g)=\prod^V_{v=1}p(f_g(v))
+$$
+
+　　为了计算特定的标签被观察到的概率，引入一个克罗内克函数：
+
+$$
+\delta[n]=\left \{ \begin{aligned} 0\quad n\neq 0\\
+1 \quad n=0 \end{aligned} \right .
+$$
+
+　　跟踪声源 $$a = b$$
 
