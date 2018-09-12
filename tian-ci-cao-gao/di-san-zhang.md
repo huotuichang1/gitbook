@@ -264,10 +264,43 @@ p(\lambda^l_v|(d')^{l|l-1}_i)p((d')^{l|l-1}_i)＝p((d')^{l|l-1}_i｜\lambda^l_v)
 =\omega_{iv}^l \mathcal N((d')_i^{l|l-1}|\mu_{iv}^l,\sum^l_{iv})
 $$
 
-　　多维高斯混合模型的均值和均方差矩阵表示如下\(参考文献只是GMM，多维高斯混合模型下的如下\)：
+　　需要注意到的一点是这样的两个符合正态分布的概率密度的乘积并不是正态分布（高斯分布）而是一个正态分布的一定倍数。
+
+　　多维高斯混合模型的均值和均方差矩阵表示如下\(参考文献只是一维高斯模型的混合）
 
 $$
 \mu_{iv}^l=\sum^l_{iv}((\sum_i^l)^{-1}\mu^l_i)+(\sum_v^l)^{-1}\mu_v^l)\\
 \sum_{iv}^l=((\sum_i^l)^{-1}+(\sum_v^l)^{-1})^{-1}
 $$
+
+　　其比例系数 $$\omega_{iv}^l$$ 表示如下：
+
+$$
+\omega_{iv}^l=e(\frac{1}{2}[(\mathcal C_1)^l_{iv}+(\mathcal C_2)^l_{iv}-(\mathcal C_3)^l_{iv}-(\mathcal C_4)^l_{iv}])
+$$
+
+　　其中
+
+$$
+(\mathcal C_1)^l_{iv}=log|\sum_{iv}^l|-log(8\pi^3|\sum_i^l||\sum_v^l|)\\
+(\mathcal C_2)^l_{iv}=(\mu_{iv}^l)^T(\sum_{iv}^L)^{-1}\mu_{iv}^l\\
+(\mathcal C_3)^l_{iv}=(\mu_{i}^l)^T(\sum_{i}^L)^{-1}\mu_{i}^l\\
+(\mathcal C_2)^l_{iv}=(\mu_{v}^l)^T(\sum_{v}^L)^{-1}\mu_{v}^l\\
+$$
+
+　　将概率代入之前的表达式中式中：
+
+$$
+p(\lambda_v^l|\mathcal C_i)=\int \int \int p(\lambda^l_v|(d')^{l|l-1}_i)p((d')^{l|l-1}_i)dxdydz\\=\omega_{iv}^l\int \int \int \mathcal N((d')_i^{l|l-1}|\mu_{iv}^l,\sum_{iv}^l)dxdydz=\omega_{iv}^l
+$$
+
+　　上式中后面部分是由于三维高斯分布概率密度函数的体积积分为一而做出的优化。这极大地简化了我们计算 $$p(\lambda_v^l|\mathcal C_i)$$ 的过程。\(比粒子滤波好很多\)
+
+　　这上面考虑的都是已存在的声源的追踪过程。那新声源的出现和可能错误的声源的消失应该怎么表示呢？从源头考虑，观察点可能出现在扫描空间的任何地方。我们用符号 $$\mathcal D$$ 来表示弥散声源。考虑到我们的SSL原理，我们已经天然将扫描空间离散化。我们不妨设 $$\hat K$$ 代表定位中扫描到的点数。同时 $$K$$ 代表整个定位空间的点数：
+
+$$
+p(\lambda_v^l|\mathcal D)=\frac{\hat K}{K}(\frac{1}{4\pi})=\frac{\hat K}{4\pi K}
+$$
+
+ 　　这代表未被认定为追踪点的概率。即弥散的概率。其中 $$\frac{1}{4\pi}$$ 代表完整球体上的均匀分布。
 
