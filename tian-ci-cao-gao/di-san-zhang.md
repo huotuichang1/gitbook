@@ -408,5 +408,23 @@ $$
 1 \quad n=0 \end{aligned} \right .
 $$
 
-　　跟踪声源 $$a = b$$
+　　跟踪声源 $$i$$ ,被匹配至潜在声源 $$v$$ 的概率表示如下:
+
+$$
+p(i|\psi_v^l)=\sum^G_{g=1}p(f_g|\psi^l)\delta[f_g(v)-i]
+$$
+
+        同理，新声源被观测到的概率为
+
+$$
+p(i|\psi_v^l)=\sum^G_{g=1}p(f_g|\psi^l)\delta[f_g(v)+1]
+$$
+
+        至少一个潜在声源和跟踪声源存在匹配关系的概率表示如下（这个值用来控制添加或去除要跟踪的声源）：
+
+$$
+p(i|\psi^l)=\sum^G_{g=1}p(f_g|\psi^l)(1-\prod_{v-1}^V(1-\delta[f_g(v)-i]))
+$$
+
+        
 
