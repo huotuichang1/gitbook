@@ -582,7 +582,7 @@ $$
 
 ```
 
-         计算过程如上图所示。后面我们会根据至少一个潜在声源和跟踪声源存在匹配关系的概率来控制声源的添加、消除和跟踪过程。为了控制这些过程，我们给出三个阈值： $$\theta_{new},\theta_{prob},\theta_{dead}$$ 。对三个过程一一进行分析： $$p(new|\psi^l_v)\gneq \theta_{new}$$ 时，进入判断阶段。为了确定这是一个有效的潜在声源而不是一个不稳定的噪声，我们会在 $$N_{prob}$$ 帧内持续进行判断来确保这是一个有效的潜在声源而不是偶发性的噪声。同时在概率检测阶段，我们在对卡尔曼滤波过程中添加的观测噪声会选择一个较小的值来保证其在这个检测阶段可以迅速收敛。然后在此检测阶段，我们会计算其中每一帧至少一个潜在声源和跟踪声源存在匹配关系的概率$$p(i|\psi_v^l)$$的均值。如果其均值大于 $$\theta_{prob}$$ 我们认为其是新的追踪声源。
+         计算过程如上图所示。后面我们会根据至少一个潜在声源和跟踪声源存在匹配关系的概率来控制声源的添加、消除和跟踪过程。为了控制这些过程，我们给出三个阈值： $$\theta_{new},\theta_{prob},\theta_{dead}$$ 。对三个过程一一进行分析： $$p(new|\psi^l_v)\gneq \theta_{new}$$ 时，进入判断阶段。为了确定这是一个有效的潜在声源而不是一个不稳定的噪声，我们会在 $$N_{prob}$$ 帧内持续进行判断来确保这是一个有效的潜在声源而不是偶发性的噪声。同时在概率检测阶段，我们在对卡尔曼滤波过程中添加的观测噪声会选择一个较小的值来保证其在这个检测阶段可以迅速收敛。然后在此检测阶段，我们会计算其中每一帧潜在声源和其对应跟踪声源存在匹配关系的概率$$p(i|\psi_v^l)$$的均值。如果其均值大于 $$\theta_{prob}$$ 我们认为其是新的追踪声源。
 
         在确认声源存在后，我们会持续判断 $$(p(i|\psi_v^l)<\theta_{dead})$$ 的结果。如果这个不等式在 $$N_{dead}$$ 帧中成立\(即 $$N_{dead}$$ 帧中都小于 $$\theta_{dead}$$ \)，这个声源就会被判定为消失。需要说明的是在确认声源存在后，观测噪声协方差就会增加为 $$(\sigma_R^2)_{active}$$来更好的描述声源可能的动作。
 
@@ -635,8 +635,87 @@ $$
         前面讨论了概率上的计算，由于是多目标卡尔曼跟踪，我们的更新过程也需要做一点小小的变化。计算卡尔曼增益的表达式由于不涉及到测量值所以可以仍旧写成如下的形式：
 
 $$
-K^{l|l-1}_i=p^{l-1|l}_iH^T(HP^{l|l-1}_iH^T+R)^{-1}
+K^{l|l-1}_i=P^{l-1|l}_iH^T(HP^{l|l-1}_iH^T+R)^{-1}
 $$
 
-        而卡尔曼滤波的测量值应该怎么表示呢？引入 $$\hat v(i)$$
+        而卡尔曼滤波的测量值应该怎么表示呢？引入 $$\hat v(i)$$，代表最大可能性的潜在声源的索引。
+
+$$
+\hat v(i)=arg max_v\{p(i|\psi^l)\}
+$$
+
+        这个过程相当于用概率来替代马氏距离的计算来描述观测声源和跟踪声源之间的关系。权重系数 $$p(i|\psi^l)$$ 就会影响均值和协方差矩阵的更新速度。
+
+$$
+\hat x^{l|l}_i=(\hat x')^{l|l-1}_i+p(i|\psi^l)K_i^{l|l-1}(\lambda^l_{\hat v(i)}-H(\hat x')^{l|l-1}_i)\\
+P^{l|l}_i=P^{l|l-1}_i-p(i|\psi^l)K^{l|l-1}_iHP^{l|l-1}_i
+$$
+
+        这是引入权重系数后的更新过程。代码如下：
+
+```c
+    void kalman2kalman_update(kalman2kalman_obj * obj, const postprobs_obj * postprobs, const unsigned int iTrack, const pots_obj * pots, kalman_obj * kalman) {
+
+        unsigned int iPot;
+        float maxValue;
+        unsigned int maxIndex;
+        float updateFactor;
+        
+        // Find potential source with max prob
+
+        maxValue = postprobs->arrayTrack[iTrack * postprobs->nPots];
+        maxIndex = 0;
+
+        for (iPot = 1; iPot < postprobs->nPots; iPot++) {
+
+            if (maxValue < postprobs->arrayTrack[iTrack * postprobs->nPots + iPot]) {
+                maxValue = postprobs->arrayTrack[iTrack * postprobs->nPots + iPot];
+                maxIndex = iPot;
+            }
+
+        }
+
+        obj->z->array[0*(obj->z->nCols)+0] = pots->array[maxIndex * 4 + 0];
+        obj->z->array[1*(obj->z->nCols)+0] = pots->array[maxIndex * 4 + 1];
+        obj->z->array[2*(obj->z->nCols)+0] = pots->array[maxIndex * 4 + 2];
+
+        // Compute K计算卡尔曼增益K的变化率
+        matrix_mul(obj->HP, obj->H, kalman->P_llm1);
+        matrix_mul(obj->HPHt, obj->HP, obj->Ht);
+        matrix_add(obj->HPHt_R, obj->HPHt, obj->R);
+        matrix_inv(obj->HPHt_Rinv, obj->HPHt_R);
+        matrix_mul(obj->PHt, kalman->P_llm1, obj->Ht);
+        matrix_mul(obj->K, obj->PHt, obj->HPHt_Rinv);
+
+        updateFactor = postprobs->arrayTrackTotal[iTrack];
+        //　更新时有updateFactor，受状态影响。
+        // Update x
+        matrix_mul(obj->Hx, obj->H, kalman->x_llm1);
+        printf("z[1] %0.9f,z[2] %0.9f,z[3] %0.9f,z[4] %0.9f,z[5] %0.9f,z[6] %0.9f\n",obj->z->array[0],obj->z->array[1],obj->z->array[2],obj->z->array[3],obj->z->array[4],obj->z->array[5]);        
+        matrix_sub(obj->z_Hx, obj->z, obj->Hx);
+        printf("Hx[1] %0.9f,Hx[2] %0.9f,Hx[3] %0.9f,Hx[4] %0.9f,Hx[5] %0.9f,Hx[6] %0.9f\n",obj->Hx->array[0],obj->Hx->array[1],obj->Hx->array[2],obj->Hx->array[3],obj->Hx->array[4],obj->Hx->array[5]);        
+        matrix_mul(obj->Kz_Hx, obj->K, obj->z_Hx);
+        printf("z_Hx[1] %0.9f,z_Hx[2] %0.9f,z_Hx[3] %0.9f,z_Hx[4] %0.9f,z_Hx[5] %0.9f,z_Hx[6] %0.9f\n",obj->z_Hx->array[0],obj->z_Hx->array[1],obj->z_Hx->array[2],obj->z_Hx->array[3],obj->z_Hx->array[4],obj->z_Hx->array[5]);        
+        matrix_scale(obj->pKz_Hx, obj->Kz_Hx, updateFactor);
+        printf("Kz_Hx[1] %0.9f,Kz_Hx[2] %0.9f,Kz_Hx[3] %0.9f,Kz_Hx[4] %0.9f,Kz_Hx[5] %0.9f,Kz_Hx[6] %0.9f\n",obj->Kz_Hx->array[0],obj->Kz_Hx->array[1],obj->Kz_Hx->array[2],obj->Kz_Hx->array[3],obj->Kz_Hx->array[4],obj->Kz_Hx->array[5]);        
+        matrix_add(kalman->x_lm1lm1, kalman->x_llm1, obj->pKz_Hx);
+        printf("pKz_Hx[1] %0.9f,pKz_Hx[2] %0.9f,pKz_Hx[3] %0.9f,pKz_Hx[4] %0.9f,pKz_Hx[5] %0.9f,pKz_Hx[6] %0.9f\n",obj->pKz_Hx->array[0],obj->pKz_Hx->array[1],obj->pKz_Hx->array[2],obj->pKz_Hx->array[3],obj->pKz_Hx->array[4],obj->pKz_Hx->array[5]);
+        printf("updateFactor %f\n",updateFactor);
+        printf("x_lm1lm1[1] %0.9f,x_lm1lm1[2] %0.9f,x_lm1lm1[3] %0.9f,x_lm1lm1[4] %0.9f,x_lm1lm1[5] %0.9f,x_lm1lm1[6] %0.9f\n",kalman->x_lm1lm1->array[0],kalman->x_lm1lm1->array[1],kalman->x_lm1lm1->array[2],kalman->x_lm1lm1->array[3],kalman->x_lm1lm1->array[4],kalman->x_lm1lm1->array[5]);
+        // Update P
+        matrix_mul(obj->KHP, obj->K, obj->HP);
+        matrix_scale(obj->pKHP, obj->KHP, updateFactor);
+        matrix_sub(kalman->P_lm1lm1, kalman->P_llm1, obj->pKHP);
+
+    }
+
+    void kalman2kalman_update_static(kalman2kalman_obj * obj, const postprobs_obj * postprobs, const unsigned int iTrack, const pots_obj * pots, kalman_obj * kalman) {
+        //保持不变
+        matrix_copy_matrix(kalman->x_lm1lm1, kalman->x_llm1);
+        matrix_copy_matrix(kalman->P_lm1lm1, kalman->P_llm1);
+
+    }
+```
+
+
 
