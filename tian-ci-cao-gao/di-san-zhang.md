@@ -426,5 +426,217 @@ $$
 p(i|\psi^l)=\sum^G_{g=1}p(f_g|\psi^l)(1-\prod_{v-1}^V(1-\delta[f_g(v)-i]))
 $$
 
+        这些就是计算出的后验概率，也是用于下一步判断的概率。
+
+```c
+        // Prior probabilities
+
+        for (iPot = 0; iPot < mixture->nPots; iPot++) {
+
+            for (iTrackNewFalse = 0; iTrackNewFalse < mixture->nTracksNewFalse; iTrackNewFalse++) {
+
+                t = (((signed int) iTrackNewFalse) - 2);
+
+                if (t == -2) {
+
+                    mixture->p_phics[iTrackNewFalse * mixture->nPots + iPot] = obj->Pfalse;
+                    //printf("t == -2 mixture->p_phics[iTrackNewFalse * mixture->nPots + iPot] %f\n",mixture->p_phics[iTrackNewFalse * mixture->nPots + iPot]);
         
+                }
+                else if (t == -1) {
+
+                    mixture->p_phics[iTrackNewFalse * mixture->nPots + iPot] = obj->Pnew;
+                    //printf("t == -1 mixture->p_phics[iTrackNewFalse * mixture->nPots + iPot] %f\n",mixture->p_phics[iTrackNewFalse * mixture->nPots + iPot]);
+        
+                }
+                else {
+
+                    mixture->p_phics[iTrackNewFalse * mixture->nPots + iPot] = obj->Ptrack;
+                    //printf("t == 0 mixture->p_phics[iTrackNewFalse * mixture->nPots + iPot] %f\n",mixture->p_phics[iTrackNewFalse * mixture->nPots + iPot]);
+        
+                }                    
+                //printf("iTrackNewFalse %d mixture->p_phics[iTrackNewFalse * mixture->nPots + iPot] %f\n",iTrackNewFalse,mixture->p_phics[iTrackNewFalse * mixture->nPots + iPot]);
+            }
+            
+        }
+
+        // Posterior probabilities
+
+        total = obj->epsilon;
+#if 0        
+        nCombinations = 1;
+    //联合次数。这里可以看到nPots对处理过程速度的影响。nCombinations是很多个for循环的上限，他的意义是一共要做多少个结合（pots和tracks之间和他们本身）。
+    //举个栗子，在nPots=2,nTracks=2时，nCombinations为16.在nPots=4,nTracks=4时，nCombinations为1296.（必须注意到的是nTracks小于等于nPots)
+    //这也是这个算法不能解决更多声源定位的缺憾。要加2是因为原来的状态中有false,new两种。
+        for (iPot = 0; iPot < nPots; iPot++) {
+
+            nCombinations *= (2+nTracks);
+
+        }
+#endif
+        //printf("mixture->nCombinations %d\n",mixture->nCombinations);
+        for (iCombination = 0; iCombination < mixture->nCombinations; iCombination++) {
+
+            mixture->p_Ez_phic[iCombination] = 1.0f;
+            mixture->p_phic[iCombination] = 1.0f;
+
+            for (iPot = 0; iPot < mixture->nPots; iPot++) {
+
+                t = mixture->assignations->array[iCombination * mixture->nPots + iPot];
+                iTrackNewFalse = (unsigned int) (t + 2);
+
+                mixture->p_Ez_phic[iCombination] *= mixture->p_Eszs_phics[iTrackNewFalse * mixture->nPots + iPot];
+                mixture->p_phic[iCombination] *= mixture->p_phics[iTrackNewFalse * mixture->nPots + iPot];
+
+            }
+
+            mixture->p_phic_Ez[iCombination] = mixture->p_Ez_phic[iCombination] * mixture->p_phic[iCombination];
+
+            total += mixture->p_phic_Ez[iCombination];
+
+        }
+            printf("total %f\n",total);
+        for (iCombination = 0; iCombination < mixture->nCombinations; iCombination++) {
+
+            mixture->p_phic_Ez[iCombination] /= total;
+            //printf("iCombination %d mixture->p_phic_Ez[iCombination] %f\n",iCombination,mixture->p_phic_Ez[iCombination]);
+        }
+        
+        // Tracking - Potential probabilities
+
+        for (iTrack = 0; iTrack < mixture->nTracks; iTrack++) {
+
+            t = ((signed int) iTrack);
+
+            for (iPot = 0; iPot < mixture->nPots; iPot++) {
+
+                postprobs->arrayTrack[iTrack * mixture->nPots + iPot] = 0.0f;
+
+                for (iCombination = 0; iCombination < mixture->nCombinations; iCombination++) {
+
+                    if (mixture->assignations->array[iCombination * mixture->nPots + iPot] == t) {
+
+                        postprobs->arrayTrack[iTrack * mixture->nPots + iPot] += mixture->p_phic_Ez[iCombination];
+
+                    }
+                    
+                }
+
+            }    
+
+        }
+
+        // New probabilities
+
+        postprobs->arrayNew[0] = 0.0f;
+
+        for (iPot = 0; iPot < mixture->nPots; iPot++) {
+
+            postprobs->arrayNew[iPot] = 0.0f;
+
+            for (iCombination = 0; iCombination < mixture->nCombinations; iCombination++) {
+
+                if (mixture->assignations->array[iCombination * mixture->nPots + iPot] == -1) {
+
+                    postprobs->arrayNew[iPot] += mixture->p_phic_Ez[iCombination];
+
+                }
+
+            }
+
+        }                 
+
+        // Tracking probabilities
+
+        for (iTrack = 0; iTrack < mixture->nTracks; iTrack++) {
+
+            t = ((signed int) iTrack);
+            postprobs->arrayTrackTotal[iTrack] = 0.0f;
+
+            for (iCombination = 0; iCombination < mixture->nCombinations; iCombination++) {
+
+                match = 0;
+
+                for (iPot = 0; iPot < mixture->nPots; iPot++) {
+
+                    if (mixture->assignations->array[iCombination * mixture->nPots + iPot] == t) {
+
+                        match = 1;
+                        break;
+
+                    }
+
+                }
+
+                if (match == 1) {
+
+                    postprobs->arrayTrackTotal[iTrack] += mixture->p_phic_Ez[iCombination];
+
+                }
+
+            }              
+
+        }
+
+    }
+
+```
+
+         计算过程如上图所示。后面我们会根据至少一个潜在声源和跟踪声源存在匹配关系的概率来控制声源的添加、消除和跟踪过程。为了控制这些过程，我们给出三个阈值： $$\theta_{new},\theta_{prob},\theta_{dead}$$ 。对三个过程一一进行分析： $$p(new|\psi^l_v)\gneq \theta_{new}$$ 时，进入判断阶段。为了确定这是一个有效的潜在声源而不是一个不稳定的噪声，我们会在 $$N_{prob}$$ 帧内持续进行判断来确保这是一个有效的潜在声源而不是偶发性的噪声。同时在概率检测阶段，我们在对卡尔曼滤波过程中添加的观测噪声会选择一个较小的值来保证其在这个检测阶段可以迅速收敛。然后在此检测阶段，我们会计算其中每一帧至少一个潜在声源和跟踪声源存在匹配关系的概率$$p(i|\psi_v^l)$$的均值。如果其均值大于 $$\theta_{prob}$$ 我们认为其是新的追踪声源。
+
+        在确认声源存在后，我们会持续判断 $$(p(i|\psi_v^l)<\theta_{dead})$$ 的结果。如果这个不等式在 $$N_{dead}$$ 帧中成立\(即 $$N_{dead}$$ 帧中都小于 $$\theta_{dead}$$ \)，这个声源就会被判定为消失。需要说明的是在确认声源存在后，观测噪声协方差就会增加为 $$(\sigma_R^2)_{active}$$来更好的描述声源可能的动作。
+
+        这部分的代码如下：
+
+```c
+            // +----------------------------------------------------------------------+
+            // | Activity                                                             |
+            // +----------------------------------------------------------------------+
+
+            iTrack = 0;
+            memset(obj->sourceActivities, 0x00, sizeof(float) * obj->nTracksMax);
+
+            for (iTrackMax = 0; iTrackMax < obj->nTracksMax; iTrackMax++) {
+
+                if (obj->ids[iTrackMax] != 0) {
+                    //mixture2mixture_process中计算postprob,update过程中又取其最大值。
+                    sourceActivity = obj->postprobs[obj->nTracks]->arrayTrackTotal[iTrack];
+                    obj->sourceActivities[iTrackMax] = sourceActivity;
+
+                    // Update counters
+                    
+                    switch (obj->type[iTrackMax]) {
+                        
+                        case 'P':
+
+                            obj->n_prob[iTrackMax]++;
+                            obj->mean_prob[iTrackMax] += sourceActivity;
+
+                        break;
+
+                        case 'A':
+                            //在active状态时如果suurceActivity小于theta_inactive（现在在.cfg中是０．９）时，进行计数。连续五十个时间戳比其小则去掉该声源
+                            if (sourceActivity >= obj->theta_inactive) {
+                                obj->n_inactive[iTrackMax] = 0;
+                            }
+                            else {
+                                obj->n_inactive[iTrackMax]++;   
+                            }
+
+                        break;
+
+                        case 'T':
+
+                            // No counter to update
+
+                        break;
+```
+
+        前面讨论了概率上的计算，由于是多目标卡尔曼跟踪，我们的更新过程也需要做一点小小的变化。计算卡尔曼增益的表达式由于不涉及到测量值所以可以仍旧写成如下的形式：
+
+$$
+K^{l|l-1}_i=p^{l-1|l}_iH^T(HP^{l|l-1}_iH^T+R)^{-1}
+$$
+
+        而卡尔曼滤波的测量值应该怎么表示呢？引入 $$\hat v(i)$$
 
