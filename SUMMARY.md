@@ -8,6 +8,7 @@
 * [第一章](tian-ci-cao-gao/untitled.md)
 * [第二章](tian-ci-cao-gao/di-er-zhang.md)
 * [第三章](tian-ci-cao-gao/di-san-zhang.md)
+* [第四章](tian-ci-cao-gao/di-si-zhang.md)
 
 ## 张洁草稿
 
