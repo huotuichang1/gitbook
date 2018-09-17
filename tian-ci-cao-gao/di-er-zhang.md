@@ -370,5 +370,251 @@ $$
  ————LEVEL4 中的是5120个三角形，2562个点。  
         可以发现点数 $$K$$符合 $$K=10*4^{L}+2$$ 的规律。
 
-        考虑整个算法中的五个模块，GCC-PHAT和MSW都是已知的算法。一个用来计算时延，一个是确认滑动窗中的最大值。另外三个分别是麦克风指向性\(Microphone Directivity\)，最大滑动窗口自动校准\(Maximum Sliding Window Automatic Calibration\)，和分层搜索\(Hierarchical Search\)。其中的麦克风指向性主要是考虑到这样一种情形：在麦克风阵列中，麦克风通常被假设为全向的，即从所有方向以相等的增益获取信号。然而，在实践中，麦克风通常安装在刚体上，这可能会阻塞声源和麦克风之间的直接传播路径。比如在麦克风板的背面。由衍射导致的衰减同时会影响频域函数。由于传播路径的复杂性，具体的衍射衰减模型是不存在的。通常我们会使用简化假设：1）具有直接传播路径的声源具有单位增益。2）当传播路径中有障碍物时，增益为零。由于麦克风阻塞时的信噪比通常是未知的，所以假设有一个低信噪比会比较安全，并且我们将增益设置为零防止在观测中注入噪声。此外，对于所有频率，增益设置恒定，并且平滑过渡频带连接单元和空增益区域。该过渡带是为了防止声源位置变化时增益的突然变化。
+        考虑整个算法中的五个模块，GCC-PHAT和MSW都是已知的算法。一个用来计算时延，一个是确认滑动窗中的最大值。另外三个分别是麦克风指向性\(Microphone Directivity\)，最大滑动窗口自动校准\(Maximum Sliding Window Automatic Calibration\)，和分层搜索\(Hierarchical Search\)。其中的麦克风指向性主要是考虑到这样一种情形：在麦克风阵列中，麦克风通常被假设为全向的，即从所有方向以相等的增益获取信号。然而，在实践中，麦克风通常安装在刚体上，这可能会阻塞声源和麦克风之间的直接传播路径。比如在麦克风板的背面。由衍射导致的衰减同时会影响频域函数。由于传播路径的复杂性，具体的衍射衰减模型是不存在的。通常我们会使用简化假设：1）具有直接传播路径的声源具有单位增益。2）当传播路径中有障碍物时，增益为零。由于麦克风阻塞时的信噪比通常是未知的，所以假设有一个低信噪比会比较安全，并且我们将增益设置为零防止在观测中注入噪声。此外，对于所有频率，增益设置恒定，并且平滑过渡频带连接单元和空增益区域。该过渡带是为了防止声源位置变化时增益的突然变化。代码在directivity.c中。如下:
+
+```c
+beampatterns_obj * directivity_beampattern_mics(const mics_obj * mics, const unsigned int nThetas) {
+
+        beampatterns_obj * obj;
+        
+        unsigned int nChannels;
+        unsigned int iChannel;
+        unsigned int iTheta;
+        float theta;
+        float xap, xnp, x0;
+        float alpha;
+
+        nChannels = mics->nChannels;
+
+        obj = beampatterns_construct_zero(nChannels, nThetas);
+
+        for (iChannel = 0; iChannel < nChannels; iChannel++) {
+
+            obj->minThetas[iChannel] = 0.0f;
+            obj->maxThetas[iChannel] = 180.0f;
+            obj->deltaThetas[iChannel] = (obj->maxThetas[iChannel] - obj->minThetas[iChannel]) / ((float) (nThetas - 1));
+
+            for (iTheta = 0; iTheta < nThetas; iTheta++) {
+
+                theta = ((float) iTheta) * obj->deltaThetas[iChannel] + obj->minThetas[iChannel];
+
+                if (theta <= mics->thetaAllPass[iChannel]) {
+
+                    obj->gains[iChannel * nThetas  + iTheta] = 1.0f;
+
+                }
+                else if (theta >= mics->thetaNoPass[iChannel]) {
+
+                    obj->gains[iChannel * nThetas  + iTheta] = 0.0f;
+
+                }
+                else {
+
+                    xap = mics->thetaAllPass[iChannel];
+                    xnp = mics->thetaNoPass[iChannel];
+
+                    x0 = (xap + xnp) / 2.0f;
+                    alpha = 20.0f / (xnp - xap);
+
+                    obj->gains[iChannel * nThetas  + iTheta] = 1.0f / (1.0f + expf(alpha * (theta - x0)));
+
+                }
+
+            }
+
+        }
+
+        return obj;
+
+    }
+
+    beampatterns_obj * directivity_beampattern_spatialfilter(const spatialfilter_obj * spatialfilter, const unsigned int nThetas) {
+
+        beampatterns_obj * obj;
+        
+        unsigned int iTheta;
+        float theta;
+        float xap, xnp, x0;
+        float alpha;
+
+        obj = beampatterns_construct_zero(1, nThetas);
+
+        obj->minThetas[0] = 0.0f;
+        obj->maxThetas[0] = 180.0f;
+        obj->deltaThetas[0] = (obj->maxThetas[0] - obj->minThetas[0]) / ((float) (nThetas - 1));
+
+        for (iTheta = 0; iTheta < nThetas; iTheta++) {
+
+            theta = ((float) iTheta) * obj->deltaThetas[0] + obj->minThetas[0];
+
+            if (theta <= spatialfilter->thetaAllPass) {
+
+                obj->gains[iTheta] = 1.0f;
+
+            }
+            else if (theta >= spatialfilter->thetaNoPass) {
+
+                obj->gains[iTheta] = 0.0f;
+
+            }
+            else {
+
+                xap = spatialfilter->thetaAllPass;
+                xnp = spatialfilter->thetaNoPass;
+
+                x0 = (xap + xnp) / 2.0f;
+                alpha = 20.0f / (xnp - xap);
+
+                obj->gains[iTheta] = 1.0f / (1.0f + expf(alpha * (theta - x0)));
+
+            }
+
+        }
+
+        return obj;
+
+    }
+
+    spatialgains_obj * directivity_spatialgains(const mics_obj * mics, const beampatterns_obj * beampatterns_mics, const spatialfilter_obj * spatialfilter, const beampatterns_obj * beampatterns_spatialfilter, const points_obj * points) {
+
+        spatialgains_obj * obj;
+
+        unsigned int nChannels;
+        unsigned int iChannel;
+        unsigned int nPoints;
+        unsigned int iPoint;
+        float dx, dy, dz, dNorm;
+        float sx, sy, sz, sNorm;
+        float ux, uy, uz, uNorm;
+        float projMic;
+        float projFilter;
+        float thetaMic;
+        float thetaFilter;
+        signed int iThetaMic;
+        signed int iThetaFilter;
+        unsigned int nThetasMic;
+        unsigned int nThetasFilter;
+
+        float gainMic;
+        float gainFilter;
+
+        nChannels = mics->nChannels;
+        nPoints = points->nPoints;
+        nThetasMic = beampatterns_mics->nThetas;
+        nThetasFilter = beampatterns_spatialfilter->nThetas;
+
+        obj = spatialgains_construct_zero(nChannels, nPoints);
+
+        for (iChannel = 0; iChannel < nChannels; iChannel++) {
+
+            dx = mics->direction[iChannel * 3 + 0];
+            dy = mics->direction[iChannel * 3 + 1];
+            dz = mics->direction[iChannel * 3 + 2];
+
+            dNorm = sqrtf(dx * dx + dy * dy + dz * dz);
+
+            sx = spatialfilter->direction[0];
+            sy = spatialfilter->direction[1];
+            sz = spatialfilter->direction[2];
+
+            sNorm = sqrtf(sx * sx + sy * sy + sz * sz);
+
+            for (iPoint = 0; iPoint < nPoints; iPoint++) {
+
+                ux = points->array[iPoint * 3 + 0];
+                uy = points->array[iPoint * 3 + 1];
+                uz = points->array[iPoint * 3 + 2];
+
+                uNorm = sqrtf(ux * ux + uy * uy + uz * uz);
+
+                projMic = dx * ux + dy * uy + dz * uz;
+                projFilter = sx * ux + sy * uy + sz * uz;
+
+                thetaMic = (360.0f/(2.0f * M_PI)) * acosf(projMic / (dNorm * uNorm));
+                thetaFilter = (360.0f/(2.0f * M_PI)) * acosf(projFilter / (sNorm * uNorm));
+
+                iThetaMic = roundf((thetaMic - beampatterns_mics->minThetas[iChannel]) / (beampatterns_mics->deltaThetas[iChannel]) + beampatterns_mics->minThetas[iChannel]);
+                iThetaFilter = roundf((thetaFilter - beampatterns_spatialfilter->minThetas[0]) / (beampatterns_spatialfilter->deltaThetas[0]) + beampatterns_spatialfilter->minThetas[0]);
+
+                if (iThetaMic < 0) {
+                    iThetaMic = 0;
+                }
+                if (iThetaMic >= nThetasMic) {
+                    iThetaMic = nThetasMic - 1;
+                }
+
+                if (iThetaFilter < 0) {
+                    iThetaFilter = 0;
+                }
+                if (iThetaFilter >= nThetasFilter) {
+                    iThetaFilter = nThetasFilter - 1;
+                }                
+
+                gainMic = beampatterns_mics->gains[iChannel * nThetasMic + iThetaMic];
+                gainFilter = beampatterns_spatialfilter->gains[iThetaFilter];
+
+                obj->array[iPoint * nChannels + iChannel] = gainMic * gainFilter;
+
+            }
+
+        }
+
+        return obj;
+
+    }
+
+    spatialmasks_obj * directivity_spatialmasks(const spatialgains_obj * spatialgains, const float gainMin) {
+
+        spatialmasks_obj * obj;
+
+        unsigned int nChannels;
+        unsigned int nPairs;
+        unsigned int nPoints;
+
+        unsigned int iChannel1, iChannel2;
+        unsigned int iPair;
+        unsigned int iPoint;
+        float gain;
+
+        nChannels = spatialgains->nChannels;
+        nPairs = nChannels * (nChannels - 1) / 2;
+        nPoints = spatialgains->nPoints;
+
+        obj = spatialmasks_construct_zero(nPoints, nPairs);
+
+        for (iPoint = 0; iPoint < nPoints; iPoint++) {
+
+            iPair = 0;
+
+            for (iChannel1 = 0; iChannel1 < nChannels; iChannel1++) {
+
+                for (iChannel2 = (iChannel1 + 1); iChannel2 < nChannels; iChannel2++) {
+
+                    gain = spatialgains->array[iPoint * nChannels + iChannel1] * spatialgains->array[iPoint * nChannels + iChannel2];
+
+                    if (gain >= gainMin) {
+                        
+                        obj->array[iPoint * nPairs + iPair] = 0x01;
+
+                    }
+                    else {
+
+                        obj->array[iPoint * nPairs + iPair] = 0x00;
+
+                    }
+
+                    iPair++;
+
+                }
+
+            }
+
+        }
+
+        return obj;
+
+    }
+```
+
+
 
