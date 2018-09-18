@@ -1079,12 +1079,204 @@ beampatterns_obj * directivity_beampattern_mics(const mics_obj * mics, const uns
         下面介绍最大滑动窗口自动校准\(Maximum Sliding Window Automatic Calibration\)。首先我们考虑两个麦克风p和q之间的时延 $$\tau_{pq}(\vec u)$$。在远场假设下，这个时延可以如下表示：
 
 $$
-\tau_{pq}(\vec u)=\frac{fs}{c}(\vec p-\vec q) *\vec u;
+\tau_{pq}(\vec u)=\frac{f_s}{c}(\vec p-\vec q) \cdot\vec u;
 $$
 
         其中的 $$\vec u$$代表声源方向， $$fs$$代表采样率， $$c$$ 代表声速。
 
-        考虑到声音会收到各种因素的影响，实际的声速很难直接计算出来。我们用一个高斯分布来模拟这个高斯分布： $$c\sim\mathcal N(\mu_c,\sigma_c)$$。其中 $$\mu_c$$ 是声速均值， $$\sigma_c$$ 是声速的标准差。同时麦克风位置也用高斯分布拟合。 $$p\sim\mathcal N(\mu_p,\sigma_p)$$ 是麦克风位置的表示。
+        考虑到声音会收到各种因素的影响，实际的声速很难直接计算出来。我们用一个高斯分布来模拟这个高斯分布： $$c\sim\mathcal N(\mu_c,\sigma_c)$$。其中 $$\mu_c$$ 是声速均值， $$\sigma_c$$ 是声速的标准差。同时麦克风位置也用高斯分布拟合。 $$p\sim\mathcal N(\mu_p,\sigma_p)$$ 是麦克风位置的表示。通常的麦克风位置标准差设为零。
 
+        第一步，考虑如何计算 $$\alpha=f_s/c$$。为了计算简单，引入一个标准正态分布 $$\eta\sim\mathcal N(0,1)$$ ：
+
+$$
+\alpha=\frac{f_s}{\mu_c+\sigma_c\eta}
+$$
+
+        在 $$\mu_c \gg\sigma_c$$时，上述等式可以近似为：   
+
+$$
+\alpha\approx\frac{f_s}{\mu_c}(1-\frac{\sigma_c}{\mu_c}\eta)
+$$
+
+        第二步，求解由随机变量表示的两个麦克风之间的距离的投影 $$b_{pq}(\vec u)$$ 。
+
+$$
+b_{pq}(\vec u)=(\vec p-\vec q)\cdot\vec u
+$$
+
+        中间表达 $$\vec p-\vec q$$ 是一个符合正态分布分布 $$\sim\mathcal N(\mu_{pq},\sum_{pq})$$ 的随机变量。其中 $$\mu_{pq}=\mu_p-\mu_q$$ ， $$\sum_{pq}=\sum_p+\sum_q$$ 。位置的不确定性远小于麦克风之间的距离。因此，随机变量 $$b_{pq}(\vec u)$$ 可以表示为：
+
+$$
+b_{pq}(\vec u)=\mu_{b,pq}(\vec u)+\sigma_{b,pq}(\vec u)\eta=\mu_{pq}\cdot\vec u+\eta\sqrt{\vec u^T\sum_{pq}\vec u}
+$$
+
+        随机变量 $$\tau_{pq}(\vec u)$$是正态随机变量 $$a$$ 和 $$b_{pq}(\vec u)$$ 的产物。如下所示：
+
+$$
+\tau_{pq}(\vec u)=(\mu_a+\sigma_a\eta_a)(\mu_{b,pq}(\vec u)+\sigma_{b,pq}(\vec u)\eta_b)
+$$
+
+        其中 $$\eta_a$$ 和 $$\eta_b$$ 是两个相互独立的标准正态分布。由于 $$\mu_a\gg\sigma_a$$ ， $$\mu_{b,pq}(\vec u) \gg \sigma_{b,pq}(\vec u)$$ 。\(这个远大于的标准为 $$||\mu_{pq}||^2\gg||\sigma_{pq}||$$ \)， $$\tau_{pq}(\vec u)$$ 可以表示为：
+
+$$
+\tau_{pq}(\vec u)\approx\mu_a\mu_{b,pq}(\vec u)+\mu_a\sigma_{b,pq}(\vec u)\eta_b+\mu_{b,pq}(\vec u)\sigma_a\eta_a
+$$
+
+        由此，可以得知随机变量 $$\tau_{pq}(\vec u)$$ 近似符合这样的正态分布： $$\sim\mathcal N(\mu_{\tau,pq}(\vec u),\sigma_{\tau,pq}(\vec u))$$ 。其中：
+
+$$
+\mu_{\tau,pq}(\vec u)=(\frac{f_s}{\mu_c})(\mu_p-\mu_q)\cdot\vec u\\
+\sigma_{\tau,pq}(\vec u)=\sqrt{\frac{f^2_s}{\mu_c^2}\vec u^T(\sum_{p}+\sum_q)\vec u+[(\mu_p-\mu_q)\cdot\vec u]^2\frac{f_s^2\sigma^2_c}{\mu_c^4}}
+$$
+
+       这部分的代码主要在delay.c中，以及space\_points\_fine，hit\_train和linking\_maps三个部分。delay.c中是上面所讲的内容，后面的部分用来生成最大滑动窗。delay.c中的代码如下所示：
+
+```c
+    tdoas_obj * delay_tdoas(const points_obj * points, const mics_obj * mics, const soundspeed_obj * soundspeed, const unsigned int fS, const unsigned int frameSize, const unsigned int interpRate) {
+
+        tdoas_obj * obj;
+
+        unsigned int nPairs;
         
+        unsigned int iChannel1;
+        unsigned int iChannel2;
+        unsigned int iPair;
+        unsigned int iPoint;
+
+        float diff, dist, tau;
+        unsigned int tdoa;
+
+        nPairs = mics->nChannels * (mics->nChannels -1) / 2;
+
+        obj = tdoas_construct_zero(points->nPoints,nPairs);
+
+        for (iPair = 0; iPair < nPairs; iPair++) {
+
+            obj->min[iPair] = frameSize * interpRate - 1;
+            obj->max[iPair] = 0;
+
+        }
+
+        for (iPoint = 0; iPoint < points->nPoints; iPoint++) {
+
+            iPair = 0;
+
+            for (iChannel1 = 0; iChannel1 < mics->nChannels; iChannel1++) {
+
+                for (iChannel2 = (iChannel1+1); iChannel2 < mics->nChannels; iChannel2++) {
+
+                    dist = 0.0f;
+                    dist += (mics->mu[iChannel1*3+0] - mics->mu[iChannel2*3+0]) * points->array[iPoint*3+0];
+                    dist += (mics->mu[iChannel1*3+1] - mics->mu[iChannel2*3+1]) * points->array[iPoint*3+1];                    
+                    dist += (mics->mu[iChannel1*3+2] - mics->mu[iChannel2*3+2]) * points->array[iPoint*3+2];                    
+
+                    tau = -1.0f * (((float) fS * interpRate) / soundspeed->mu) * dist;
+                    tdoa = (unsigned int) (roundf(tau)+(float) (interpRate * frameSize/2));
+                    obj->array[iPoint*nPairs+iPair] = tdoa;
+                    //printf("ipoint %d iChannel1 %d iChannel2 %d tau %f\n",iPoint,iChannel1,iChannel2,tau);
+                    if (tdoa < obj->min[iPair]) {
+                        obj->min[iPair] = tdoa; 
+                    }
+                    if (tdoa > obj->max[iPair]) {
+                        obj->max[iPair] = tdoa;
+                    }
+
+                    iPair++;
+
+                }
+                //printf("obj->max[iPair] %d\n",obj->max[iPair]);
+               
+            }
+                
+        }
+
+        return obj;
+
+    }
+
+    taus_obj * delay_taus(const points_obj * points, const mics_obj * mics, const soundspeed_obj * soundspeed, const unsigned int fS, const unsigned int frameSize, const unsigned int interpRate) {
+        taus_obj * obj;
+
+        unsigned int nPairs;
+
+        unsigned int iChannel1;
+        unsigned int iChannel2;
+        unsigned int iPair;
+        unsigned int iPoint;
+
+        float mu_t;
+        float sigma2_t;
+        float mu_d;
+        float sigma2_d;
+        float mu_tau;
+        float sigma2_tau;
+
+        float mu_ij_x, mu_ij_y, mu_ij_z;
+        float sigma_ij_xx, sigma_ij_xy, sigma_ij_xz;
+        float sigma_ij_yx, sigma_ij_yy, sigma_ij_yz;
+        float sigma_ij_zx, sigma_ij_zy, sigma_ij_zz;
+
+        nPairs = mics->nChannels * (mics->nChannels -1) / 2;
+
+        obj = taus_construct_zero(points->nPoints, nPairs);
+
+        mu_t = -1.0f * ((float) fS * interpRate) / soundspeed->mu;
+        sigma2_t = ((float) fS * interpRate) * ((float) fS * interpRate) * soundspeed->sigma2 / (soundspeed->mu * soundspeed->mu * soundspeed->mu * soundspeed->mu); 
+        iPair = 0;
+
+        for (iChannel1 = 0; iChannel1 < mics->nChannels; iChannel1++) {
+
+            for (iChannel2 = (iChannel1+1); iChannel2 < mics->nChannels; iChannel2++) {
+
+                mu_ij_x = mics->mu[iChannel1*3+0] - mics->mu[iChannel2*3+0];
+                mu_ij_y = mics->mu[iChannel1*3+1] - mics->mu[iChannel2*3+1];
+                mu_ij_z = mics->mu[iChannel1*3+2] - mics->mu[iChannel2*3+2];
+
+                sigma_ij_xx = mics->sigma2[iChannel1*9+0] + mics->sigma2[iChannel2*9+0];
+                sigma_ij_xy = mics->sigma2[iChannel1*9+1] + mics->sigma2[iChannel2*9+1];
+                sigma_ij_xz = mics->sigma2[iChannel1*9+2] + mics->sigma2[iChannel2*9+2];
+                sigma_ij_yx = mics->sigma2[iChannel1*9+3] + mics->sigma2[iChannel2*9+3];
+                sigma_ij_yy = mics->sigma2[iChannel1*9+4] + mics->sigma2[iChannel2*9+4];
+                sigma_ij_yz = mics->sigma2[iChannel1*9+5] + mics->sigma2[iChannel2*9+5];
+                sigma_ij_zx = mics->sigma2[iChannel1*9+6] + mics->sigma2[iChannel2*9+6];
+                sigma_ij_zy = mics->sigma2[iChannel1*9+7] + mics->sigma2[iChannel2*9+7];
+                sigma_ij_zz = mics->sigma2[iChannel1*9+8] + mics->sigma2[iChannel2*9+8];
+
+                for (iPoint = 0; iPoint < points->nPoints; iPoint++) {
+
+                    mu_d = mu_ij_x * points->array[iPoint*3+0] + 
+                           mu_ij_y * points->array[iPoint*3+1] + 
+                           mu_ij_z * points->array[iPoint*3+2];
+
+                    sigma2_d = points->array[iPoint*3+0] * sigma_ij_xx * points->array[iPoint*3+0] + 
+                               points->array[iPoint*3+0] * sigma_ij_xy * points->array[iPoint*3+1] + 
+                               points->array[iPoint*3+0] * sigma_ij_xz * points->array[iPoint*3+2] + 
+                               points->array[iPoint*3+1] * sigma_ij_yx * points->array[iPoint*3+0] + 
+                               points->array[iPoint*3+1] * sigma_ij_yy * points->array[iPoint*3+1] + 
+                               points->array[iPoint*3+1] * sigma_ij_yz * points->array[iPoint*3+2] + 
+                               points->array[iPoint*3+2] * sigma_ij_zx * points->array[iPoint*3+0] + 
+                               points->array[iPoint*3+2] * sigma_ij_zy * points->array[iPoint*3+1] + 
+                               points->array[iPoint*3+2] * sigma_ij_zz * points->array[iPoint*3+2];
+
+                    mu_tau = mu_t * mu_d;
+                    sigma2_tau = mu_t*mu_t*sigma2_d + mu_d*mu_d*sigma2_t;
+
+                    obj->mu[iPoint*nPairs+iPair] = mu_tau + (float) (interpRate*frameSize/2);
+                    obj->sigma2[iPoint*nPairs+iPair] = sigma2_tau;
+                    //printf("obj->mu[iPoint*nPairs+iPair] %f\n",obj->mu[iPoint*nPairs+iPair]);
+                }
+
+                iPair++;
+
+            }
+
+        }
+        //printf("points->nPoints %d\n ipair %d\n",points->nPoints,iPair);
+        return obj;
+
+    }
+
+```
+
+
 
