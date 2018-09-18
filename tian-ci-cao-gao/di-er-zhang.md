@@ -336,7 +336,426 @@ $$
 \Psi_{y_1y_2}(f)=\Psi_{pt}(f)=G_1(f)G_{2}^{*}(f)/|G_1(f)G_{2}^{*}(f)|
 $$
 
-        上式只取决于冲激响应，所以在混响较低的环境中性能良好。总的来说，广义互相关法在室内混响较小的条件下，算法的结果良好，但在混响影响较重的环境下，则不尽如人意。但这种思路方法仍是值得我们学习的。
+        上式只取决于冲激响应，所以在混响较低的环境中性能良好。总的来说，广义互相关法在室内混响较小的条件下，算法的结果良好，但在混响影响较重的环境下，则不尽如人意。但这种思路方法仍是值得我们学习的。matlab示例如下：
+
+{% code-tabs %}
+{% code-tabs-item title="locate.m" %}
+```c
+function [x y z] = Locate(Sen_position, multitrack)
+% sensor index shift of 1 occurrs here
+
+s = size(Sen_position);
+len = s(1);
+timedelayvec = zeros(len,1);
+for i=1:len
+   timedelayvec(i) = timedelayfunc(multitrack(:,1),multitrack(:,i));
+end
+
+timedelayvec;
+
+Amat = zeros(len,1);
+Bmat = zeros(len,1);
+Cmat = zeros(len,1);
+Dmat = zeros(len,1);
+for i=3:len
+    x1 = Sen_position(1,1);
+    y1 = Sen_position(1,2);
+    z1 = Sen_position(1,3);
+    x2 = Sen_position(2,1);
+    y2 = Sen_position(2,2);
+    z2 = Sen_position(2,3);
+    xi = Sen_position(i,1);
+    yi = Sen_position(i,2);
+    zi = Sen_position(i,3); 
+   Amat(i) = (1/(340.29*timedelayvec(i)))*(-2*x1+2*xi) - (1/(340.29*timedelayvec(2)))*(-2*x1+2*x2);
+   Bmat(i) = (1/(340.29*timedelayvec(i)))*(-2*y1+2*yi) - (1/(340.29*timedelayvec(2)))*(-2*y1+2*y2);
+   Cmat(i) = (1/(340.29*timedelayvec(i)))*(-2*z1+2*zi) - (1/(340.29*timedelayvec(2)))*(-2*z1+2*z2);
+   Sum1 = (x1^2)+(y1^2)+(z1^2)-(xi^2)-(yi^2)-(zi^2);
+   Sum2 = (x1^2)+(y1^2)+(z1^2)-(x2^2)-(y2^2)-(z2^2);
+   Dmat(i) = 340.29*(timedelayvec(i) - timedelayvec(2)) + (1/(340.29*timedelayvec(i)))*Sum1 - (1/(340.29*timedelayvec(2)))*Sum2;
+end
+
+
+M = zeros(len-2,3);
+D = zeros(len-2,1);
+for i=3:len
+    M(i,1) = Amat(i);
+    M(i,2) = Bmat(i);
+    M(i,3) = Cmat(i);
+    D(i) = Dmat(i);
+end
+
+M = M(3:len,:);
+D = D(3:len);
+
+
+D = D.*-1;
+
+Minv = pinv(M);
+T = Minv*(D);
+x = T(1);
+y = T(2);
+z = T(3);
+
+end
+
+
+```
+{% endcode-tabs-item %}
+
+{% code-tabs-item title="timedelayfunc.m" %}
+```c
+function out = timedelayfunc(x,y)
+% suppose sampling rate is 44100
+% 其实这个用的就是GCC，最大自相关的点是时延，这里用到的是matlab中xcorr函数的特性。
+% Let Tx be transit time for x
+% Let Ty be transit time for y
+% out is Ty - Tx
+
+c = xcorr(x, y);
+[C I] = max(c);
+out = ((length(c)+1)/2 - I)/44100;
+
+end
+```
+{% endcode-tabs-item %}
+
+{% code-tabs-item title="TDOAshell.m" %}
+```c
+    function TDOAShell
+
+fid=fopen('sample.wav', 'rb');
+wave=fread(fid,inf,'int16');
+fclose(fid);
+wave = wave(:,1);
+scale = 0.8/max(wave);
+wave = scale*wave;
+Trials = 10;
+Radius = 50;                 
+N = 6;
+Theta = linspace(0,2*pi,N+1);
+X = Radius * cos(Theta(1:end-1));
+Y = Radius * sin(Theta(1:end-1));
+Z = [1:N];
+Z = (-1).^Z;
+Z = 5*Z+5;
+Sen_position = [X.',Y.',Z.'];
+Sen_position = [Sen_position];
+True_position = zeros(Trials, 3);
+Est_position = zeros(Trials,3);
+
+% Generate position of source生成声源位置
+
+for i=1:Trials
+    r = rand(1)*50;
+    t = rand(1)*2*pi; 
+    x = r*cos(t);
+    y = r*sin(t);
+    z = rand(1)*20;
+    True_position(i,1) = x;
+    True_position(i,2) = y;    
+    True_position(i,3) = z;    
+end
+
+
+% Generate distances生成距离
+
+Distances = zeros(Trials,8);
+for i=1:Trials
+    for j=1:6
+        x1 = True_position(i,1);
+        y1 = True_position(i,2);
+        z1 = True_position(i,3);
+        x2 = Sen_position(j,1);
+        y2 = Sen_position(j,2);
+        z2 = Sen_position(j,3);
+        Distances(i,j) = sqrt((x1-x2)^2 + (y1-y2)^2 + (z1-z2)^2);   
+    end
+end
+
+Distances;
+TimeDelay = Distances./340.29;
+Padding = TimeDelay*44100;
+
+% Generate the signals
+for i=1:Trials
+   x = True_position(i,1);
+   y = True_position(i,2);
+   z = True_position(i,3);
+   xstr = num2str(round(x));
+   ystr = num2str(round(y));
+   zstr = num2str(round(z));
+   istr = num2str(i);
+   name = strcat( 'Trial_', istr, '_', xstr, '_', ystr, '_', zstr, '_mdove.wav');
+   mic1 = [zeros(round(Padding(i,1)),1) ; wave];
+   mic2 = [zeros(round(Padding(i,2)),1) ; wave];
+   mic3 = [zeros(round(Padding(i,3)),1) ; wave];
+   mic4 = [zeros(round(Padding(i,4)),1) ; wave];
+   mic5 = [zeros(round(Padding(i,5)),1) ; wave];
+   mic6 = [zeros(round(Padding(i,6)),1) ; wave];
+
+   l1 = length(mic1);
+   l2 = length(mic2);
+   l3 = length(mic3);
+   l4 = length(mic4);
+   l5 = length(mic5);
+   l6 = length(mic6);
+
+   lenvec = [l1 l2 l3 l4 l5 l6];
+   m = max(lenvec);
+   c = [m-l1, m-l2, m-l3, m-l4, m-l5,m-l6];
+   mic1 = [mic1; zeros(c(1),1)];
+   mic2 = [mic2; zeros(c(2),1)];
+   mic3 = [mic3; zeros(c(3),1)];
+   mic4 = [mic4; zeros(c(4),1)];
+   mic5 = [mic5; zeros(c(5),1)];
+   mic6 = [mic6; zeros(c(6),1)];
+
+
+   
+   mic1 = mic1./Distances(i,1);
+   mic2 = mic2./Distances(i,2);
+   mic3 = mic3./Distances(i,3);
+   mic4 = mic4./Distances(i,4);
+   mic5 = mic5./Distances(i,5);
+   mic6 = mic6./Distances(i,6);
+
+   
+multitrack = [mic1, mic2, mic3, mic4, mic5, mic6];
+%wavwrite(multitrack, 44100, name);
+
+[x, y z] = Locate(Sen_position, multitrack);
+Est_position(i,1) = x;
+Est_position(i,2) = y;
+Est_position(i,3) = z;
+
+end
+
+
+figure(1)
+hold on
+plot3(True_position(:,1),True_position(:,2),True_position(:,3),'bd');
+plot3(Est_position(:,1),Est_position(:,2),Est_position(:,3),'r+','LineWidth',2);
+legend('True Position','Estimated Position');
+xlabel('X coordinate of target');
+ylabel('Y coordinate of target');
+title('TDOA Hyperbolic Localization');
+axis([-50 50 -50 50]);
+hold off
+    
+end
+
+
+function [x, y z] = Locate(Sen_position, multitrack)
+% sensor index shift of 1 occurrs here
+
+s = size(Sen_position);
+len = s(1);
+timedelayvec = zeros(len,1);
+for i=1:len
+   timedelayvec(i) = timedelayfunc(multitrack(:,1),multitrack(:,i));
+end
+
+timedelayvec;
+
+Amat = zeros(len,1);
+Bmat = zeros(len,1);
+Cmat = zeros(len,1);
+Dmat = zeros(len,1);
+for i=3:len
+    x1 = Sen_position(1,1);
+    y1 = Sen_position(1,2);
+    z1 = Sen_position(1,3);
+    x2 = Sen_position(2,1);
+    y2 = Sen_position(2,2);
+    z2 = Sen_position(2,3);
+    xi = Sen_position(i,1);
+    yi = Sen_position(i,2);
+    zi = Sen_position(i,3); 
+   Amat(i) = (1/(340.29*timedelayvec(i)))*(-2*x1+2*xi) - (1/(340.29*timedelayvec(2)))*(-2*x1+2*x2);
+   Bmat(i) = (1/(340.29*timedelayvec(i)))*(-2*y1+2*yi) - (1/(340.29*timedelayvec(2)))*(-2*y1+2*y2);
+   Cmat(i) = (1/(340.29*timedelayvec(i)))*(-2*z1+2*zi) - (1/(340.29*timedelayvec(2)))*(-2*z1+2*z2);
+   Sum1 = (x1^2)+(y1^2)+(z1^2)-(xi^2)-(yi^2)-(zi^2);
+   Sum2 = (x1^2)+(y1^2)+(z1^2)-(x2^2)-(y2^2)-(z2^2);
+   Dmat(i) = 340.29*(timedelayvec(i) - timedelayvec(2)) + (1/(340.29*timedelayvec(i)))*Sum1 - (1/(340.29*timedelayvec(2)))*Sum2;
+end
+
+
+M = zeros(len,3);
+D = zeros(len,1);
+for i=1:len
+    M(i,1) = Amat(i);
+    M(i,2) = Bmat(i);
+    M(i,3) = Cmat(i);
+    D(i) = Dmat(i);
+end
+
+M = M(3:len,:);
+D = D(3:len);
+
+
+D = D.*-1;
+
+Minv = pinv(M);
+T = Minv*(D);
+x = T(1);
+y = T(2);
+z = T(3);
+
+end
+
+function out = timedelayfunc(x,y)
+% suppose sampling rate is 44100
+% Let Tx be transit time for x
+% Let Ty be transit time for y
+% out is Ty - Tx
+
+c = xcorr(x, y);
+[C, I] = max(c);
+out = ((length(c)+1)/2 - I)/44100;
+
+end
+```
+{% endcode-tabs-item %}
+
+{% code-tabs-item title="main.m" %}
+```c
+clc;
+clear all;
+fid=fopen('sample1.wav', 'rb');
+wave=fread(fid,inf,'int16');
+fclose(fid);
+A=wave;
+wave = wave(:,1);
+scale = 0.8/max(wave);
+wave = scale*wave; %归一化处理
+Trials = 10;
+Radius = 20;   %单位cm               
+N = 6;
+Theta = linspace(pi/6,13*pi/6,N+1);
+X = Radius * cos(Theta(1:end-1));
+Y = Radius * sin(Theta(1:end-1));
+Z = [1:N];
+Z = (-1).^Z;
+Z = 0.2*Z+0.2; %这里很重要不能设成全零。因为矩阵运算中这个地方全零的话矩阵会无法求伪逆，所以要加入微小的扰动量。标度尺下大概是正常的机械误差值。不超过0.1毫米。
+Sen_position = [X.',Y.',Z.'];
+Sen_position = [Sen_position];
+True_position = zeros(Trials, 3);
+Est_position = zeros(Trials,3);
+
+% Generate position of source生成声源位置大概在四米的范围内随机选择点。
+
+for i=1:Trials
+    r = rand(1)*400;
+    t = rand(1)*2*pi; 
+    s = rand(1)*pi; 
+    x = r*cos(t)*cos(s);
+    y = r*sin(t)*cos(s);
+    z = r*sin(s);
+    True_position(i,1) = x;
+    True_position(i,2) = y;    
+    True_position(i,3) = z;    
+end
+
+
+% Generate distances生成距离
+
+Distances = zeros(Trials,8);
+for i=1:Trials
+    for j=1:6
+        x1 = True_position(i,1);
+        y1 = True_position(i,2);
+        z1 = True_position(i,3);
+        x2 = Sen_position(j,1);
+        y2 = Sen_position(j,2);
+        z2 = Sen_position(j,3);
+        Distances(i,j) = sqrt((x1-x2)^2 + (y1-y2)^2 + (z1-z2)^2);   
+    end
+end
+
+Distances;
+TimeDelay = Distances./340.29;
+Padding = TimeDelay*44100;
+
+% Generate the signals生成信号前后补零，保证定位稳定，模拟声源位置调整信号确保是从模拟声源位置发出。
+for i=1:Trials
+   x = True_position(i,1);
+   y = True_position(i,2);
+   z = True_position(i,3);
+   xstr = num2str(round(x));
+   ystr = num2str(round(y));
+   zstr = num2str(round(z));
+   istr = num2str(i);
+   name = strcat( 'Trial_', istr, '_', xstr, '_', ystr, '_', zstr, '_mdove.wav');
+   mic1 = [zeros(round(Padding(i,1)),1) ; wave];
+   mic2 = [zeros(round(Padding(i,2)),1) ; wave];
+   mic3 = [zeros(round(Padding(i,3)),1) ; wave];
+   mic4 = [zeros(round(Padding(i,4)),1) ; wave];
+   mic5 = [zeros(round(Padding(i,5)),1) ; wave];
+   mic6 = [zeros(round(Padding(i,6)),1) ; wave];
+
+   l1 = length(mic1);
+   l2 = length(mic2);
+   l3 = length(mic3);
+   l4 = length(mic4);
+   l5 = length(mic5);
+   l6 = length(mic6);
+
+   lenvec = [l1 l2 l3 l4 l5 l6];
+   m = max(lenvec);
+   c = [m-l1, m-l2, m-l3, m-l4, m-l5,m-l6];
+   mic1 = [mic1; zeros(c(1),1)];
+   mic2 = [mic2; zeros(c(2),1)];
+   mic3 = [mic3; zeros(c(3),1)];
+   mic4 = [mic4; zeros(c(4),1)];
+   mic5 = [mic5; zeros(c(5),1)];
+   mic6 = [mic6; zeros(c(6),1)];
+
+
+   
+   mic1 = mic1./Distances(i,1);
+   mic2 = mic2./Distances(i,2);
+   mic3 = mic3./Distances(i,3);
+   mic4 = mic4./Distances(i,4);
+   mic5 = mic5./Distances(i,5);
+   mic6 = mic6./Distances(i,6); %简单模拟信号在空间中随距离衰减
+
+   
+multitrack = [mic1, mic2, mic3, mic4, mic5, mic6]; 
+%audiowrite(name,multitrack, 44100);
+
+[x y z] = Locate(Sen_position, multitrack); %locate函数中有gcc-phat过程通过模拟出的信号特征为位置进行估算。Est_position为每次模拟声源位置的保存矩阵。
+Est_position(i,1) = x;
+Est_position(i,2) = y;
+Est_position(i,3) = z;
+end
+
+x1=True_position(:,1)';
+x2=Est_position(:,1)';
+x3=Sen_position(:,1)';
+
+y1=True_position(:,2)';
+y2=Est_position(:,2)';
+y3=Sen_position(:,2)';
+
+z1=True_position(:,3)';
+z2=Est_position(:,3)';
+z3=Sen_position(:,3)';
+
+plot3(x1,y1,z1,'bd',x2,y2,z2,'r+',x3,y3,z3,'yd','LineWidth',2);
+legend('True Position','Estimated Position');
+xlabel('X coordinate of target');
+ylabel('Y coordinate of target');
+zlabel('Z coordinate of target');
+title('TDOA Hyperbolic Localization');
+axis([-440 440 -440 440 -40 440]);
+%y
+
+```
+{% endcode-tabs-item %}
+{% endcode-tabs %}
+
+
 
 ## 4.多声源扫描定位算法分析
 
@@ -370,9 +789,48 @@ $$
  ————LEVEL4 中的是5120个三角形，2562个点。  
         可以发现点数 $$K$$符合 $$K=10*4^{L}+2$$ 的规律。
 
-        考虑整个算法中的五个模块，GCC-PHAT和MSW都是已知的算法。一个用来计算时延，一个是确认滑动窗中的最大值。另外三个分别是麦克风指向性\(Microphone Directivity\)，最大滑动窗口自动校准\(Maximum Sliding Window Automatic Calibration\)，和分层搜索\(Hierarchical Search\)。其中的麦克风指向性主要是考虑到这样一种情形：在麦克风阵列中，麦克风通常被假设为全向的，即从所有方向以相等的增益获取信号。然而，在实践中，麦克风通常安装在刚体上，这可能会阻塞声源和麦克风之间的直接传播路径。比如在麦克风板的背面。由衍射导致的衰减同时会影响频域函数。由于传播路径的复杂性，具体的衍射衰减模型是不存在的。通常我们会使用简化假设：1）具有直接传播路径的声源具有单位增益。2）当传播路径中有障碍物时，增益为零。由于麦克风阻塞时的信噪比通常是未知的，所以假设有一个低信噪比会比较安全，并且我们将增益设置为零防止在观测中注入噪声。此外，对于所有频率，增益设置恒定，并且平滑过渡频带连接单元和空增益区域。该过渡带是为了防止声源位置变化时增益的突然变化。代码在directivity.c中。如下:
+        考虑整个算法中的五个模块，GCC-PHAT和MSW都是已知的算法。一个用来计算时延，一个是确认滑动窗中的最大值。另外三个分别是麦克风指向性\(Microphone Directivity\)，最大滑动窗口自动校准\(Maximum Sliding Window Automatic Calibration\)，和分层搜索\(Hierarchical Search\)。
+
+        其中的麦克风指向性主要是考虑到这样一种情形：在麦克风阵列中，麦克风通常被假设为全向的，即从所有方向以相等的增益获取信号。然而，在实践中，麦克风通常安装在刚体上，这可能会阻塞声源和麦克风之间的直接传播路径。比如在麦克风板的背面。由衍射导致的衰减同时会影响频域函数。由于传播路径的复杂性，具体的衍射衰减模型是不存在的。通常我们会使用简化假设：1）具有直接传播路径的声源具有单位增益。2）当传播路径中有障碍物时，增益为零。由于麦克风阻塞时的信噪比通常是未知的，所以假设有一个低信噪比会比较安全，并且我们将增益设置为零防止在观测中注入噪声。此外，对于所有频率，增益设置恒定，并且平滑过渡频带连接单元和空增益区域。该过渡带是为了防止声源位置变化时增益的突然变化。那么如何表示声源位置呢？我们用 $$\theta(\vec u,\vec d)$$来表示声源位置处于 $$\vec u$$而麦克风指向方向由单位向量 $$\vec d$$指定的两方向间的夹角。
+
+$$
+\theta(\vec u,\vec d)=arccos[\frac{\vec u  ^ {.}\vec d}{|\vec u||\vec d|}]
+$$
+
+        同时对于增益 $$G(\vec u,\vec D)$$，我们给定角度 $$\alpha\ ,\ \beta$$，在角度小于 $$\alpha$$时，增益为单位增益\(1\)。在角度大于 $$\beta$$时，增益为零。在角度为 $$\alpha\ ,\ \beta $$ 之间时，增益符合下列公式：
+
+$$
+G(\vec u,\vec D)=\frac{1}{1+e^{((\frac{20}{\beta-\alpha})(\theta(\vec u,\vec D)-\frac{\alpha+\beta}{2}))}}
+$$
+
+        总体增益如下图\( $$\alpha=80 \ \beta=100$$ \)
+
+![&#x589E;&#x76CA;&#x968F;&#x89D2;&#x5EA6;&#x53D8;&#x5316;&#x793A;&#x610F;&#x56FE;](../.gitbook/assets/20180918-134656-ping-mu-jie-tu.png)
+
+        为了减少混响的影响，我们将扫描响应空间指向特定的方向。例如，将扫描空间指向天花板的半球，来忽略地板的反射。单位向量 $$d_0$$ 表示扫描空间的方向。
+
+        除了阵列的方向性增益，我们同时也要考虑麦克风的方向性增益。设麦克风p麦克风q的增益分别为 $$G(\vec u_k,\vec D_p),G(\vec u_k,\vec D_q)$$。这两个增益要足够大来确保在 $$\vec u_k$$ 方向上的声源可以被阵列接收到。同时也要考虑到阵列的方向增益。因此我们构造如下的函数：
+
+$$
+\zeta_{pq}(\vec u_k)=\left\{\begin{aligned} 1\quad G(\vec u_k,\vec D_0)G(\vec u_k,\vec D_p)G(\vec u_k,\vec D_q)\geq G_{min}\\ 0\quad otherwise\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\end{aligned}\right.
+$$
+
+        当 $$\zeta_{pq}(\vec u_k)$$为零时，这两个麦克风对对应的相关值就是可忽略的了。
+
+$$
+\zeta(\vec u_k)=\left\{\begin{aligned} 1\quad\sum_{p=1}^M\sum_{q=p+1}^M\zeta_{pq}(\vec u_k)\gneq0\\ 0\quad otherwise\quad\quad\quad\quad\quad\end{aligned}\right.
+$$
+
+        这样的话可以总结为
+
+$$
+\zeta=\left\{\begin{aligned} 1\quad\sum_{k=1}^K\zeta_{pq}(\vec u_k)\gneq0\\ 0\quad otherwise\quad\quad\end{aligned}\right.
+$$
+
+整个过程对应的代码在directivity.c中。如下:
 
 ```c
+//确定麦克风的指向性增益
 beampatterns_obj * directivity_beampattern_mics(const mics_obj * mics, const unsigned int nThetas) {
 
         beampatterns_obj * obj;
@@ -427,7 +885,7 @@ beampatterns_obj * directivity_beampattern_mics(const mics_obj * mics, const uns
         return obj;
 
     }
-
+//阵列方向性增益
     beampatterns_obj * directivity_beampattern_spatialfilter(const spatialfilter_obj * spatialfilter, const unsigned int nThetas) {
 
         beampatterns_obj * obj;
@@ -474,7 +932,7 @@ beampatterns_obj * directivity_beampattern_mics(const mics_obj * mics, const uns
         return obj;
 
     }
-
+//计算总的增益
     spatialgains_obj * directivity_spatialgains(const mics_obj * mics, const beampatterns_obj * beampatterns_mics, const spatialfilter_obj * spatialfilter, const beampatterns_obj * beampatterns_spatialfilter, const points_obj * points) {
 
         spatialgains_obj * obj;
@@ -562,7 +1020,7 @@ beampatterns_obj * directivity_beampattern_mics(const mics_obj * mics, const uns
         return obj;
 
     }
-
+//判断mask
     spatialmasks_obj * directivity_spatialmasks(const spatialgains_obj * spatialgains, const float gainMin) {
 
         spatialmasks_obj * obj;
