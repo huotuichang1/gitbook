@@ -1334,7 +1334,7 @@ $$
 p(\vec v_{k,e|\vec u_k})\approx\sum^M_{p=1}\sum^M_{q=p+1}\frac{p(\tau_{pq}(\vec v_{k,e})|\hat \tau_{pq}(\vec u_k),\Delta\tau_{pq})}{M(M-1)}
 $$
 
-        我们的目的是对于所有的方向 $$\vec u_k$$ 和离散点 $$\vec v_{k,e}$$ 来使得 $$p(\vec v_{k,e|\vec u_k})$$ 最大化。同时让最大滑动窗尽可能小来保证定位精度。因此我们控制 $$\Delta\tau_{pq}$$ 逐步递增，直到到达阈值 $$C_{min}$$ 。这个过程只在初始化中进行一次。伪代码流程如下：
+        我们的目的是对于所有的方向 $$\vec u_k$$ 和离散点 $$\vec v_{k,e}$$ 来使得 $$p(\vec v_{k,e|\vec u_k})$$ 最大化。同时让最大滑动窗尽可能小来保证定位精度。因此我们控制 $$\Delta\tau_{pq}$$ 逐步递增，直到到达阈值 $$C_{min}$$ 。这个过程只在初始化中进行一次。伪代码流程如下：\(hit.c中\)
 
 ![](../.gitbook/assets/20180919-203739-ping-mu-jie-tu.png)
 
