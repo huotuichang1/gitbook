@@ -1309,14 +1309,34 @@ $$
          而围绕离散方向 $$\vec u_k$$ 的表面积积分给出了MSW包含附近方向声源的概率：
 
 $$
-p(\tau_{pq}|\hat \tau_{pq}(\vec u_k),\Delta\tau_{pq}=\int\int_Ap(\tau_{pq}(\vec u)|\hat\tau_{pq}(\vec u_k),\Delta\tau_{pq})dA
+p(\tau_{pq}|\hat \tau_{pq}(\vec u_k),\Delta\tau_{pq}）=\int\int_Ap(\tau_{pq}(\vec u)|\hat\tau_{pq}(\vec u_k),\Delta\tau_{pq})dA
 $$
 
-         由于这个曲面积分没有闭合表达式\(格林积分得出\)，所以使用空间上的离散积分来估计MSW捕获源的概率概率。
+         由于这个曲面积分没有闭合表达式\(格林积分得出\)，所以使用空间上的离散积分来估计MSW捕获源的概率。
 
 $$
 p(\tau_{pq}|\hat\tau_{pq}(\vec u_k),\Delta\tau_{pq})\approx\sum^E_{e=1}\frac{p(\tau_{pq}(\vec v_{k,e})|\hat\tau_{pq}(\vec u_k),\Delta\tau_{pq})}{E}
 $$
+
+         这里的E是什么呢？为了准确拟合这个概率我们用 $$E$$ 个点来拟合八边形为离散曲面\(为什么是八边形？猜测可能是八个方向\)。而 $$\mathcal D$$ 代表迭代次数。八边形的半径是方向 $$\vec u_k$$ 和它的最近邻方向的距离。其中 $$E=4(2^{\mathcal D}+4^{\mathcal D})+1$$ 。如下图：
+
+![](../.gitbook/assets/20180919-172309-ping-mu-jie-tu.png)
+
+        对于之前设定的所有声源方向 $$S=\{\vec u_1,\vec u_2,...,\vec u_K\}$$，MSW包含附近方向声源的概率如下：
+
+$$
+p(\tau_{pq}|\hat\tau_{pq}(S),\Delta\tau_{pq})\approx\sum_{k=1}^{K}\sum_{e=1}^E\frac{p(\tau_{pq}(\vec v_{k,e})|\hat \tau_{pq}(\vec u_k),\Delta\tau_{pq})}{KE}
+$$
+
+         这里的 $$\vec v_{k,e}$$ 是刚刚拟合的离散曲面上的点的坐标。对于给定的方向 $$\vec u_k$$ ，离散点 $$\vec v_{k,e}$$ 被所有的麦克风对包含的概率为：
+
+$$
+p(\vec v_{k,e|\vec u_k})\approx\sum^M_{p=1}\sum^M_{q=p+1}\frac{p(\tau_{pq}(\vec v_{k,e})|\hat \tau_{pq}(\vec u_k),\Delta\tau_{pq})}{M(M-1)}
+$$
+
+        我们的目的是对于所有的方向 $$\vec u_k$$ 和离散点 $$\vec v_{k,e}$$ 来使得 $$p(\vec v_{k,e|\vec u_k})$$ 最大化。同时让最大滑动窗尽可能小来保证定位精度。因此我们控制 $$\Delta\tau_{pq}$$ 逐步递增，直到到达阈值 $$C_{min}$$ 。这个过程只在初始化中进行一次。伪代码流程如下：
+
+![](../.gitbook/assets/20180919-203739-ping-mu-jie-tu.png)
 
 
 
