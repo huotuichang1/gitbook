@@ -1278,5 +1278,19 @@ $$
 
 ```
 
+        上面的步骤\(delay.c中的\)计算出了TDOA的不确定性，同时用来确定最大滑动窗的大小。在我们的代码中，由于GCC-PHAT生成的是具有离散索引的帧\(整数\)，因此我们计算出每个方向 $$\vec u_k$$ 的TDOA值时\(表示为 $$\hat \tau_{pq}(\vec u_k)$$ \)，经常近似为最接近的整数：
 
+$$
+\hat \tau_{pq}(\vec u_k)=\lfloor(\frac{f_s}{\mu_c}(\vec \mu_p-\vec\mu_q)\cdot\vec u_k)\rceil
+$$
+
+        为了处理观测到的随机变量 $$\tau_{pq}(\vec u)$$ 和我们近似计算出的每个方向的TDOA值 $$\hat \tau_{pq}(\vec u_k)$$ 之间的差异，对于每对麦克风，我们需要一个最大滑动窗来计算GCC—PHAT。我们使用 $$\hat r_{pq}^l[n]$$ 来代表这个滑动窗中的时延值序列。其中 $$l$$ 代表帧索引。这个滑动窗中含有 $$2\Delta\tau_{pq}+1$$ 个采样点。
+
+$$
+\hat r_{pq}[n]=max\{r_{pq}[n-\Delta\tau_{pq}],...,r_{pq}[n+\Delta\tau_{pq}]\}
+$$
+
+        下面给出的图表明了 $$\tau_{pq}(\vec u)$$ 的概率密度函数下方的区域面积代表MSW包含TDOA值的概率。
+
+![](../.gitbook/assets/20180919-155926-ping-mu-jie-tu.png)
 
