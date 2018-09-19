@@ -1294,3 +1294,29 @@ $$
 
 ![](../.gitbook/assets/20180919-155926-ping-mu-jie-tu.png)
 
+        这个曲线下的区域用公式来表示如下\(和 $$\hat \tau_{pq}(\vec u)$$ 以及 $$\Delta\tau_{pq}$$ 相关\)：
+
+$$
+p(\tau_{pq}(\vec u)|\hat\tau_{pq}(\vec u_k),\Delta\tau_{pq})=\int^{\hat\tau_{pq}(\vec u_k)+\Delta\tau_{pq}+0.5}_{\hat\tau_{pq}(\vec u_k)+\Delta\tau_{pq}-0.5}f(\tau|\tau_{pq}(\vec u))d\tau
+$$
+
+        同时，函数 $$f(\tau|\tau_{pq}(\vec u))$$ 可被表示为\(落在 $$\tau_{pq}(\vec u)$$ 的概率。\)
+
+$$
+f(\tau|\tau_{pq}(\vec u))=\mathcal N(\tau|\mu_{\tau,pq}(\vec u),\sigma_{\tau,pq}(\vec u))
+$$
+
+         而围绕离散方向 $$\vec u_k$$ 的表面积积分给出了MSW包含附近方向声源的概率：
+
+$$
+p(\tau_{pq}|\hat \tau_{pq}(\vec u_k),\Delta\tau_{pq}=\int\int_Ap(\tau_{pq}(\vec u)|\hat\tau_{pq}(\vec u_k),\Delta\tau_{pq})dA
+$$
+
+         由于这个曲面积分没有闭合表达式\(格林积分得出\)，所以使用空间上的离散积分来估计MSW捕获源的概率概率。
+
+$$
+p(\tau_{pq}|\hat\tau_{pq}(\vec u_k),\Delta\tau_{pq})\approx\sum^E_{e=1}\frac{p(\tau_{pq}(\vec v_{k,e})|\hat\tau_{pq}(\vec u_k),\Delta\tau_{pq})}{E}
+$$
+
+
+
