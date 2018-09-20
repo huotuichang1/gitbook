@@ -298,6 +298,11 @@ $$
 
 　　这上面考虑的都是已存在的声源的追踪过程。那新声源的出现和可能错误的声源的消失应该怎么表示呢？从源头考虑，观察点可能出现在扫描空间的任何地方。我们用符号 $$\mathcal D$$ 来表示弥散声源。考虑到我们的SSL原理，我们已经天然将扫描空间离散化。我们不妨设 $$\hat K$$ 代表定位中扫描到的点数。同时 $$K$$ 代表整个定位空间的点数：
 
+（mod\_sst.c,161:
+
+ diffuse\_cst = 1.0f / \(4.0f \* M\_PI \* \(\(float\) nPointsActive\) / \(\(float\) spatialindexes-&gt;nPoints\)\);  
+）
+
 $$
 p(\lambda_v^l|\mathcal D)=\frac{\hat K}{K}(\frac{1}{4\pi})=\frac{\hat K}{4\pi K}
 $$
