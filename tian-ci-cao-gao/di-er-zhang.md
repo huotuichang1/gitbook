@@ -2493,3 +2493,272 @@ directivity方向性的网格
 
         其中，在来自 $$S'$$ 的方向 $$\vec u_c'$$ 和来自 $$S''$$ 的方向 $$\vec u_f'$$ 之间的相似性通过 $$\delta_{pq}(c,f)$$ 来表示。 $$\delta_{pq}(c,f)$$ 是子集 $$I_{pq}'(u_c')$$ 和 $$I_{pq}''(u_f'')$$ 的交集。
 
+$$
+\delta_{pq}(c,f)=I_{pq}'(u_c')\cap I_{pq}''(u_f'')\\
+I_{pq}'(u_c')=[\hat \tau_{pq}(u_c')-\Delta\tau_{pq}',\hat\tau_{pq(u_c')+\Delta\tau_{pq}'}]\\
+I_{pq}''(u_f'')=[\hat \tau_{pq}(u_f'')-\Delta\tau_{pq}'',\hat\tau_{pq(u_f'')+\Delta\tau_{pq}''}]
+$$
+
+       $$I_{pq}'(u_c')$$ 是一个范围，而 $$\Delta\tau_{pq}'，\Delta\tau_{pq}''$$ 是由粗糙，精细尺度下MSW窗的大小对每一个麦克风对pq而分别决定的。每个方向 $$u_f''$$ 在精细网格中被映射到粗糙搜索中的U个最相似的方向。算法如下：
+
+![](../.gitbook/assets/20180920-145459-ping-mu-jie-tu.png)
+
+        代码如下（主要在hit.c中）：
+
+{% code-tabs %}
+{% code-tabs-item title="hit.c" %}
+```c
+
+        void hit_areas_pair(areas_obj * areas, const taus_obj * taus, const tdoas_obj * tdoas, const deltas_obj * deltas, const spatialmasks_obj * spatialmasks, const unsigned int iPair) {
+
+        unsigned int iPointDiscrete;
+        unsigned int nPointsDiscrete;
+        unsigned int iPointResolution;
+        unsigned int nPointsResolution;
+        unsigned int iResolutionPerDiscrete;
+        unsigned int nResolutionsPerDiscrete;
+        unsigned int nPairs;
+
+        float delta;
+        float tdoa;
+
+        float mu;
+        float sigma2;
+        float expr1;
+        float expr2;
+        float prob;
+
+        nPointsDiscrete = tdoas->nPoints;
+        nPointsResolution = taus->nPoints;
+        nResolutionsPerDiscrete = nPointsResolution / nPointsDiscrete;
+        nPairs = taus->nPairs;
+
+        delta = (float) deltas->array[iPair];
+
+        for (iPointDiscrete = 0; iPointDiscrete < nPointsDiscrete; iPointDiscrete++) {
+
+            tdoa = (float) tdoas->array[iPointDiscrete * nPairs + iPair];
+
+            for (iResolutionPerDiscrete = 0; iResolutionPerDiscrete < nResolutionsPerDiscrete; iResolutionPerDiscrete++) {  
+
+                iPointResolution = iPointDiscrete * nResolutionsPerDiscrete + iResolutionPerDiscrete;
+
+                if (spatialmasks->array[iPointDiscrete * nPairs + iPair] == 0x01) {
+
+                    mu = taus->mu[iPointResolution * nPairs + iPair];
+                    sigma2 = taus->sigma2[iPointResolution * nPairs + iPair];
+
+                    expr1 = (tdoa + delta + 0.5f - mu) / (sqrtf(2.0f * sigma2));
+                    expr2 = (tdoa - delta - 0.5f - mu) / (sqrtf(2.0f * sigma2));
+//高斯误差函数是高斯分布的不定积分。这里求的是（3.23）
+                    prob = 0.5f * (erff(expr1) - erff(expr2));                    
+
+                    areas->array[iPointResolution * nPairs + iPair] = prob;
+
+                }
+
+            }
+
+        }                
+
+    }
+//最小区域
+    float hit_areas_min(const areas_obj * areas, const spatialmasks_obj * spatialmasks) {
+
+        unsigned int iPointDiscrete;
+        unsigned int nPointsDiscrete;
+        unsigned int iResolutionPerDiscrete;
+        unsigned int nResolutionsPerDiscrete;
+        unsigned int iPair;
+        unsigned int nPairs;
+        unsigned int iPointResolution;
+
+        float prob;
+        unsigned int count;
+        float minValue;
+        float minValuePoint;
+
+        nPointsDiscrete = areas->nPointsDiscrete;
+        nResolutionsPerDiscrete = areas->nResolutionsPerDiscrete;
+        nPairs = areas->nPairs;
+
+        minValue = +INFINITY;
+
+        for (iPointDiscrete = 0; iPointDiscrete < nPointsDiscrete; iPointDiscrete++) {
+
+            count = 0;
+
+            for (iPair = 0; iPair < nPairs; iPair++) {
+                
+                if (spatialmasks->array[iPointDiscrete * nPairs + iPair] == 0x01) {
+
+                    count++;
+
+                }
+                
+            }
+
+            if (count > 0) {
+
+                minValuePoint = +INFINITY;
+
+                for (iResolutionPerDiscrete = 0; iResolutionPerDiscrete < nResolutionsPerDiscrete; iResolutionPerDiscrete++) {
+
+                    iPointResolution = iPointDiscrete * nResolutionsPerDiscrete + iResolutionPerDiscrete;
+
+                    prob = 0.0f;
+
+                    for (iPair = 0; iPair < nPairs; iPair++) {
+
+                        if (spatialmasks->array[iPointDiscrete * nPairs + iPair] == 0x01) {
+
+                            prob += areas->array[iPointResolution * nPairs + iPair];
+
+                        }
+
+                    }
+
+                    if (prob < minValuePoint) {
+                        minValuePoint = prob;
+                    }                
+
+                }
+
+                minValuePoint /= ((float) count);
+
+                if (minValuePoint < minValue) {
+                    minValue = minValuePoint;
+                }
+
+            }
+
+        }
+
+        return minValue;
+
+    }
+
+    area_obj * hit_area_zero(const taus_obj * taus, const tdoas_obj * tdoas, const deltas_obj * deltas) {
+
+        area_obj * area;
+
+        unsigned int nPairs;
+
+        nPairs = taus->nPairs;
+
+        area = area_construct_zero(nPairs);
+
+        return area;
+
+    }
+
+    void hit_area_pair(area_obj * area, const areas_obj * areas, const taus_obj * taus, const tdoas_obj * tdoas, const deltas_obj * deltas, const spatialmasks_obj * spatialmasks, const unsigned int iPair) {
+
+        unsigned int iPointDiscrete;
+        unsigned int nPointsDiscrete;
+        unsigned int iPointResolution;
+        unsigned int nPointsResolution;
+        unsigned int iResolutionPerDiscrete;
+        unsigned int nResolutionsPerDiscrete;
+        unsigned int nPairs;
+        unsigned int count;
+
+        nPointsDiscrete = tdoas->nPoints;
+        nPointsResolution = taus->nPoints;
+        nResolutionsPerDiscrete = nPointsResolution / nPointsDiscrete;
+        nPairs = taus->nPairs;
+
+        area->array[iPair] = 0.0f;
+        count = 0;
+
+        for (iPointDiscrete = 0; iPointDiscrete < nPointsDiscrete; iPointDiscrete++) {
+
+            for (iResolutionPerDiscrete = 0; iResolutionPerDiscrete < nResolutionsPerDiscrete; iResolutionPerDiscrete++) {  
+
+                iPointResolution = iPointDiscrete * nResolutionsPerDiscrete + iResolutionPerDiscrete;                
+
+                if (spatialmasks->array[iPointDiscrete * nPairs + iPair] == 0x01) {
+
+                    area->array[iPair] += areas->array[iPointResolution * nPairs + iPair];
+                    count++;
+
+                }
+
+            }
+
+        }    
+
+        if (count > 0) {
+            area->array[iPair] /= ((float) count);
+        }
+        else {
+            area->array[iPair] = 1.0f;
+        }
+
+    }
+
+    deltas_obj * hit_train(const taus_obj * taus, const tdoas_obj * tdoas, const spatialmasks_obj * spatialmasks, const float probMin) {
+
+        deltas_obj * deltas;
+        areas_obj * areas;
+        area_obj * area;
+        
+        unsigned int iPair;
+        unsigned int nPairs;
+        float minValue;
+        unsigned int minIndex;
+
+        nPairs = taus->nPairs;
+
+        deltas = deltas_construct_zero(nPairs); 
+        areas = hit_areas_zero(taus, tdoas, deltas); 
+        area = hit_area_zero(taus, tdoas, deltas);
+
+        for (iPair = 0; iPair < nPairs; iPair++) {
+
+            hit_areas_pair(areas, taus, tdoas, deltas, spatialmasks, iPair);
+            hit_area_pair(area, areas, taus, tdoas, deltas, spatialmasks, iPair);
+
+        }
+
+        while(1) {
+
+            minValue = hit_areas_min(areas, spatialmasks);
+           // printf("minValue %f\n",minValue);
+            if (minValue >= probMin) {
+                break;
+            }
+
+            minValue = +INFINITY;
+            //printf("nPairs %d\n",nPairs);
+            for (iPair = 0; iPair < nPairs; iPair++) {
+
+                if (area->array[iPair] < minValue) {
+                    minValue = area->array[iPair];
+                    minIndex = iPair;
+                    //printf("minValue11 %f iPair %d\n",minValue,iPair);
+                }
+                
+            }
+
+            deltas->array[minIndex]++;
+
+            hit_areas_pair(areas, taus, tdoas, deltas, spatialmasks, minIndex);
+            hit_area_pair(area, areas, taus, tdoas, deltas, spatialmasks, minIndex);
+            
+        }
+        //printf("deltas->array[minIndex] %d\n",deltas->array[minIndex]);
+        areas_destroy(areas);
+        area_destroy(area);
+
+        return deltas;
+
+    }
+```
+{% endcode-tabs-item %}
+{% endcode-tabs %}
+
+        从上面我们可知匹配矩阵提供了在初始化时连接粗分辨率网格和精分辨率网格的手段，然后使用粗分辨率网格和精分辨率网格执行分层搜索。我们的算法就是计算粗分辨和细分辨网格的大小然后进行优化是的定位尽量准确。刚刚描述的过程均在初始化中完成。接下来就是需要信号参与的过程。
+
+        之前我们提到过，表达式 $$\hat r_{pq}'$$ 和 $$\hat r_{pq}''$$ 代表了麦克风对pq在MSW窗下分别在粗精度，细精度下的GCC-PHAT帧。
+
