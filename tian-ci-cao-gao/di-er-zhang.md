@@ -2491,15 +2491,15 @@ directivity方向性的网格
 
         到这步，下面就要进行分层搜索了。分层搜索包括两个离散的网格：一个具有粗分辨率，另一个具有良好的分辨率。匹配矩阵连接了粗糙和精细的搜索网格。（用 $$S',S''$$ 表示两个网格。）这个矩阵是一个 $$K'×K''$$的矩阵。用变量 $$\mathcal M$$ 来表示。将精细搜索的所有区域点代表的 $$K''$$ 个方向和粗糙搜索中的一些点总共 $$K'$$ 个进行对应。
 
-        其中，在来自 $$S'$$ 的方向 $$\vec u_c'$$ 和来自 $$S''$$ 的方向 $$\vec u_f'$$ 之间的相似性通过 $$\delta_{pq}(c,f)$$ 来表示。 $$\delta_{pq}(c,f)$$ 是子集 $$I_{pq}'(u_c')$$ 和 $$I_{pq}''(u_f'')$$ 的交集。
+        其中，在来自 $$S'$$ 的方向 $$\vec u_c'$$ 和来自 $$S''$$ 的方向 $$\vec u_f'$$ 之间的相似性通过 $$\delta_{pq}(c,f)$$ 来表示。 $$\delta_{pq}(c,f)$$ 是子集 $$I_{pq}'(\vec u_c')$$ 和 $$I_{pq}''(\vec u_f'')$$ 的交集。
 
 $$
-\delta_{pq}(c,f)=I_{pq}'(u_c')\cap I_{pq}''(u_f'')\\
-I_{pq}'(u_c')=[\hat \tau_{pq}(u_c')-\Delta\tau_{pq}',\hat\tau_{pq(u_c')+\Delta\tau_{pq}'}]\\
-I_{pq}''(u_f'')=[\hat \tau_{pq}(u_f'')-\Delta\tau_{pq}'',\hat\tau_{pq(u_f'')+\Delta\tau_{pq}''}]
+\delta_{pq}(c,f)=I_{pq}'(\vec u_c')\cap I_{pq}''(\vec u_f'')\\
+I_{pq}'(\vec u_c')=[\hat \tau_{pq}(\vec u_c')-\Delta\tau_{pq}',\hat\tau_{pq(\vec u_c')+\Delta\tau_{pq}'}]\\
+I_{pq}''(\vec u_f'')=[\hat \tau_{pq}(\vec u_f'')-\Delta\tau_{pq}'',\hat\tau_{pq(\vec u_f'')+\Delta\tau_{pq}''}]
 $$
 
-       $$I_{pq}'(u_c')$$ 是一个范围，而 $$\Delta\tau_{pq}'，\Delta\tau_{pq}''$$ 是由粗糙，精细尺度下MSW窗的大小对每一个麦克风对pq而分别决定的。每个方向 $$u_f''$$ 在精细网格中被映射到粗糙搜索中的U个最相似的方向。算法如下：
+       $$I_{pq}'(\vec u_c')$$ 是一个范围，而 $$\Delta\tau_{pq}'，\Delta\tau_{pq}''$$ 是由粗糙，精细尺度下MSW窗的大小对每一个麦克风对pq而分别决定的。每个方向 $$\vec u_f''$$ 在精细网格中被映射到粗糙搜索中的U个最相似的方向。算法如下：
 
 ![](../.gitbook/assets/20180920-145459-ping-mu-jie-tu.png)
 
@@ -2760,5 +2760,54 @@ $$
 
         从上面我们可知匹配矩阵提供了在初始化时连接粗分辨率网格和精分辨率网格的手段，然后使用粗分辨率网格和精分辨率网格执行分层搜索。我们的算法就是计算粗分辨和细分辨网格的大小然后进行优化是的定位尽量准确。刚刚描述的过程均在初始化中完成。接下来就是需要信号参与的过程。
 
-        之前我们提到过，表达式 $$\hat r_{pq}'$$ 和 $$\hat r_{pq}''$$ 代表了麦克风对pq在MSW窗下分别在粗精度，细精度下的GCC-PHAT帧。
+        之前我们提到过，表达式 $$\hat r_{pq}'$$ 和 $$\hat r_{pq}''$$ 代表了麦克风对pq在MSW窗下分别在粗精度，细精度下的GCC-PHAT帧。考虑扫描过程中的麦克风指向性，我们只在麦克风指向的增益 $$\zeta_{pq}(\vec u_c')or\zeta_{pq}(\vec u_f'')$$ 为1时对每个麦克风对pq的GCC-PHAT结果进行求和，同时除以每个方向激活状态的麦克风对（麦克风对数目用 $$\mathcal T$$ 来表示。）进行归一化来表示能量等级（用 $$\varepsilon'，\varepsilon''$$ 来表示。）。变量 $$\epsilon$$ 是为了避免除以零而引入的量。扫描寻找 $$v$$ 个潜在点得到方位信息DOA $$\lambda_v=\vec u_{f^{*}}''$$ 和相关能量的等级 $$\Lambda_v=\varepsilon''(f^{*})$$ 。我们使用的分层搜索策略平均涉及 $$K'+K''U/K'$$ 个扫描方向。较 $$K''$$ 少。
+
+         算法流程伪代码如下：
+
+![](../.gitbook/assets/20180920-175107-ping-mu-jie-tu.png)
+
+        代码如下（这部分主要是求和取平均的过程）：
+
+```c
+    
+    void xcorr2aimg_process(xcorr2aimg_obj * obj, const tdoas_obj * tdoas, const indexes_obj * indexes, const spatialindexes_obj * spatialindexes, const unsigned int iCoarse, const xcorrs_obj * xcorrs, aimg_obj * aimg) {
+
+        unsigned int iSpatialIndex;
+        unsigned int iPair;
+        unsigned int iFine;
+        unsigned int iPoint;
+        unsigned int tau;
+
+        memset(aimg->array, 0x00, sizeof(float) * aimg->aimgSize);
+
+        //printf("indexes->count[iCoarse] %d %d\n ",spatialindexes->count[iPoint],indexes->count[iCoarse]);
+        for (iFine = 0; iFine < indexes->count[iCoarse]; iFine++) {
+
+            iPoint = indexes->array[iCoarse * indexes->nFines + iFine];
+
+            for (iSpatialIndex = 0; iSpatialIndex < spatialindexes->count[iPoint]; iSpatialIndex++) {
+
+                iPair = spatialindexes->array[iPoint * spatialindexes->nPairs + iSpatialIndex];
+
+                tau = tdoas->array[iPoint * tdoas->nPairs + iPair];
+
+                aimg->array[iPoint] += xcorrs->array[iPair][tau];
+
+                //printf("xcorrs->array[%d][%d] %f\n",iPair,tau,xcorrs->array[iPair][tau]);
+            }
+                //printf("aimg->array[iPoint] %f\n",aimg->array[iPoint]);
+            aimg->array[iPoint] /= ((float) spatialindexes->count[iPoint]);  
+               
+        #if 0    
+            if(aimg->array[iPoint] < 0.3)
+            {
+                aimg->array[iPoint] /= 2;
+            }
+        #endif
+        }
+        //printf("aimg->array[iPoint] %f\n",aimg->array[iPoint]);
+        
+
+    }
+```
 
