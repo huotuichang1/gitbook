@@ -20,5 +20,40 @@ f(t,\vec m_1)\\
 f(t,\vec m_{N-1})\end{aligned}\right]
 $$
 
-        现在要注意到我们假定是在连续时域 $$t$$ 上进行处理。这是为了避免由于离散时间而导致的间隔。但是这个问题在我们
+        现在要注意到我们假定是在连续时域 $$t$$ 上进行处理。这是为了避免由于离散时间而导致的间隔。但是这个问题在我们将宽带波束在分割为窄带变为不同子带域的时候会消失。因为我们在子带域中应用的相移和比例因子是连续的值，不管开始的信号是否是这样。每个麦克风的输出是通过一个线性时不变滤波器和冲击响应 $$h_n(\tau)$$ 进行滤波求和输出的。
+
+$$
+y(t)=\sum_{n=0}^{N-1}\int_{-\infty}^{\infty}h_n(t-\tau)f_n(\tau,\vec m_n)d\tau
+$$
+
+        在矩阵形式中，延迟求和滤波器传感器\(麦克风\)权重可被表示如下：
+
+$$
+y(t)=\int_{-\infty}^{\infty}\vec h^T(t-\tau)\vec f(\tau,\vec m)d\tau
+$$
+
+        其中
+
+$$
+\vec h(t)=\left[\begin{aligned}h_0(t)\\
+h_1(t)\\
+{.}{\quad}\\
+{.}{\quad}\\
+h_{N-1}(t)\end{aligned}\right]
+$$
+
+        使用连续时间傅里叶变换转移到频域上可以重写为：
+
+$$
+Y(\omega)=\int^{\infty}_{-\infty}y(t)e^{-j\omega t}dt=\vec H^T(\omega)\vec F(\omega,\vec m)
+$$
+
+        注意这里的分解 $$Y(\omega)=\vec H^T(\omega)\vec F(\omega,\vec m)$$ 类似于时域上的形式，其分别可以写为
+
+$$
+\vec H(\omega)=\int^{\infty}_{-\infty}\vec h(t)e^{-j\omega t}dt\\
+\vec F(\omega,\vec m)=\int^{\infty}_{-\infty}\vec f(t,\vec m)e^{-j \omega t}dt
+$$
+
+
 
