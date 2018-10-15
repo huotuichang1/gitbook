@@ -159,7 +159,7 @@ $$
 
         其中，窄带subband中心频率是 $$\{\omega_m\}$$ 。传播时延 $$\{\tau_n\}$$ 的计算如刚刚所示。 $$T_s$$ 是定义的采样间隔。
 
-### 1.2波束方向图（指向，，很多意义）
+### 1.2波束方向特性（指向，，很多意义）
 
          这部分和第一章的内容有部分重叠。做一些说明即可。
 
@@ -198,4 +198,10 @@ $$
 $$
 \Upsilon(\omega,\vec k)\triangleq\vec H^T(\omega)\vec v_k(\vec k )
 $$
+
+         与此同时， $$\vec H(\omega)$$ 是滤波器响应 $$\vec h(t)$$ 的傅里叶变换。正像是频率响应 $$H(\omega)$$ 制定了传统线性时不变系统对正弦输入的响应\( $$H(e^{j\omega})\triangleq \sum^{\infty}_{m=-\infty}h[m]e^{-j\omega m}$$ \)。频率-波数响应函数指定了阵列对具有波数 $$\vec k$$ 和角频率 $$\omega$$ 的平面的输出响应。观察公式 $$\Upsilon(\omega,\vec k)$$ ，发现冗余的是角频率 $$\omega$$ 是由波数 $$\vec k$$ 唯一指定的。但我们仍然保留了 $$\omega$$ ,为了强调频率-波数响应函数的频率依赖性。
+
+        波束方向特性代表了阵列对具有波数 $$\vec k=\frac{2\pi}{\lambda}\vec a(\theta,\phi)$$ 的平面波的灵敏度。可以表示如下： $$B(\omega:\theta,\phi)\triangleq \Upsilon(\omega,\vec k)|_{\vec k=\frac{2\pi}{\lambda}\vec a(\theta,\phi)}$$ 。其中 $$\vec a(\theta,\phi)$$ 是一个有球面坐标角 $$\theta,\phi$$ 的单位向量。频率-波数响应函数和 波束方向特性的主要区别在于 波束方向特性中的参数必须与物理角度 $$\theta,\phi$$ 相对应。
+
+### 1.3延迟求和滤波器
 
