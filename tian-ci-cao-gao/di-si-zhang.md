@@ -8,7 +8,7 @@ description: Beamforming
 
 ## 1.波束形成基本原理与概念
 
-### 1.1声音的传播和阵列几何位置
+### 1.1声音的传播和阵列几何位置（同时也涉及到多相滤波，subband的一些概念）
 
         我们首先来思考一个具有 $$N$$ 个传感器的随机形状的阵列。 我们假设这 $$N$$ 个传感器的坐标 $$\vec m_n$$ 全部已知， $$n=0,1,...,N-1$$ 。传感器接收到的信号可以表示如下：
 
@@ -72,4 +72,96 @@ $$
         其中 $$r \geq 0$$ 代表半径或者范围，极角 $$\theta$$ 符合 $$0\leq \theta \leq \pi$$ 。方位角 $$\phi$$ 符合 $$0\leq \phi \leq 2\pi$$ 。但要注意到的是，在圆形阵列情况下，方位角 $$\phi$$ 符合 $$0\leq \phi \leq 2\pi$$ 是没有问题的。但是在线性阵列下，由于对称性，方位角 $$\phi$$ 符合 $$0\leq \phi \leq \pi$$ 而不是 $$0\leq \phi \leq 2\pi$$ 。
 
         在经典的阵列处理文献中，声波是平面波是很常见的假设，这意味着波的来源是远点，即符合远场假设。其实这种假设在通过空气的声波束成形中并不为真，因为阵列的孔径通常与从源到传感器的距离具有相同的数量级。但这个假设仍然是非常有必要的，其一是简化了许多在近场模型中的重要概念，其二是在实践中并非总是能可靠的估计从源到传感器的距离。在这种情况下，平面波假设是唯一的可能选择。
+
+        考虑如下的一个平面波：
+
+$$
+\vec a=\left [\begin{aligned}a_x\\a_y\\a_z \end{aligned}\right]=\left [\begin{aligned}-sin\theta cos\phi\\-sin\theta sin\phi\\-cos\theta\quad \end{aligned}\right]
+$$
+
+        这个平面波的第一个产物的简化是一个相同的信号 $$f(t)$$ 到达每个传感器但不是同时到达的一个简写。如下：
+
+$$
+\vec f(t,\vec m)=\left[\begin{aligned}f(t-\tau_0)\\f(t-\tau_1)\\f(t-\tau_2)\\.\quad\quad\\f(t-\tau_{N-1})\end{aligned}\right]
+$$
+
+        其中到达时延\(TDOA\) $$\tau_n$$ 出现在上式中，其实是可以被内积计算出的\(几何方法计算\)：
+
+$$
+\tau_n=\frac{\vec a^T\vec m_n}{c}=-\frac{1}{c}[m_{n,x}\cdot sin\theta cos\phi +m_{n,y}\cdot sin\theta sin\phi +m_{n,z}\cdot cos\theta]
+$$
+
+        $$c$$ 是声音的速度， $$\vec m_n=[m_{n,x}\quad m_{n,y}\quad m_{n,z}]$$ 。每个时延 $$\tau_n$$ 代表着第 $$n$$ 个传感器到起点传感器的时延。现在我们定义方向余弦为
+
+$$
+\vec u \triangleq -\vec a
+$$
+
+        那么我们就可以得到\(这里就理解为啥在odas里会有负号了\)
+
+$$
+\tau_n=-\frac{1}{c}[u_xm_{n,x}+u_ym_{n,y}+u_zm_{n,z}]=-\frac{\vec u^T\vec m_n}{c}
+$$
+
+        连续时间傅立叶变换的时延特性意味着在信号模型下，刚刚定义的 $$F(\omega)$$ 的第 $$n$$ 分量可以是 表示为
+
+$$
+F_n(\omega)=\int^{\infty}_{-\infty}f(t-\tau_n)e^{j\omega t}dt=e^{-j\omega \tau_n}F(\omega)
+$$
+
+        其中的 $$F(\omega)$$ 是原始声源的傅里叶变换。从刚刚的推导中我们还可以得到：
+
+$$
+\omega\tau_n=\frac{\omega}{c}\vec a^T\vec m_n=-\frac{\omega}{c}\vec u^T\vec m_n
+$$
+
+        对于平面波在局部均匀介质中传播的情况，波数定义为
+
+$$
+\vec k=\frac{\omega}{c}\vec a=\frac{2\pi}{\lambda}\vec a
+$$
+
+        其中 $$\lambda$$ 是对应于角频率 $$\omega$$ 的波长。由此，波数可以表示为：
+
+$$
+\vec k=-\frac{2\pi}{\lambda}\left[\begin{aligned}sin\theta cos\phi\\sin\theta sin\phi\\cos\theta\quad \end{aligned}\right]=-\frac{2\pi}{\lambda}\vec u
+$$
+
+        假设声速可以表示为一个常数，那么
+
+$$
+|\vec k|=\frac{\omega}{c}=\frac{2\pi}{\lambda}
+$$
+
+        物理上，波数表示平面波的传播方向和频率。在上面波数的表达式中，矢量 $$\vec k$$ 定义出了平面波的传播方向。平面波的等式意味着 $$\vec k$$ 的大小决定了平面波的频率。由此，我们也得到了：
+
+$$
+\omega\tau_n=\vec k^T\vec m_n
+$$
+
+        因此，传播波的傅里叶变换的 $$n$$ 次分量可以表示为如下向量形式：
+
+$$
+\vec F(\omega)=F(\omega)\vec v_k(\vec k)
+$$
+
+        这里的 $$\vec v_k(\vec k)$$ 是阵列流形向量。表示如下：
+
+$$
+\vec v_k(\vec k)\triangleq \left[\begin{aligned}e^{-j\vec k^T\vec m_0}\\e^{-j\vec k^T\vec m_1}\\.\quad\\e^{-j\vec k^T\vec m_{n-1}}\end{aligned}\right]
+$$
+
+        这个表达式表示了阵列位置和传播波的交互作用的一个完整的缩写/摘要。正如前面提到的，波束形成通常在离散时间傅里叶变换域，通过使用数字滤波器组。这意味着在样本中必须指定时间偏移。在这种情况下，数组流形向量必须表示为：
+
+$$
+\vec v_{DT}(\vec x,\omega_m)\triangleq \left[\begin{aligned}e^{-j\omega_m\tau_0/T_s}\\e^{-j\omega_m\tau_1/T_s}\\.\quad\quad\\.\quad\quad\\e^{-j\omega_m\tau_{N-1}/T_s}\end{aligned}\right]
+$$
+
+        其中，窄带subband中心频率是 $$\{\omega_m\}$$ 。传播时延 $$\{\tau_n\}$$ 的计算如刚刚所示。 $$T_s$$ 是定义的采样间隔。
+
+### 1.2波束方向图（指向，，很多意义）
+
+         这部分和第一章的内容有部分重叠。做一些说明即可。
+
+         对数字信号处理的一些基础知识，我们证明了复指数序列 $$f[n]=e^{jwn}$$ 是任何数字线性时不变系统的特征序列。
 
