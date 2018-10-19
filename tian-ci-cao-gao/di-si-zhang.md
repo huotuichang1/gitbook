@@ -239,5 +239,40 @@ $$
 m_{n,x}=(n-\frac{N-1}{2})d,\quad m_{n,y}=m_{n,z}=0\quad \forall n=0,...,N-1
 $$
 
+        其中 $$d$$ 表示麦克风间距。为了进一步简化，假设平面波只在 $$x-y$$ 平面上传播，阵列流形就可以表示为
 
+$$
+\vec v_k(k_x)=[e^{j(\frac{N-1}{2})k_xd}...e^{j(\frac{N-1}{2}-1)k_xd}...e^{-j(\frac{N-1}{2})k_xd}]^T
+$$
+
+        其中定义 $$k$$ 的 $$x$$ 分量的定义如下
+
+$$
+k_x\triangleq -\frac{2\pi}{\lambda}cos\phi=-k_0cos\phi\\
+k_0\triangleq|\vec k|=\frac{2\pi}{\lambda}
+$$
+
+        \(补充下波数的定义，[理论物理](https://baike.baidu.com/item/%E7%90%86%E8%AE%BA%E7%89%A9%E7%90%86/2490260)中定义为：k=2π/λ。意为2π长度上出现的全波数目。从[相位](https://baike.baidu.com/item/%E7%9B%B8%E4%BD%8D/2391710)的角度出发，可理解为：相位随距离的变化率（rad/m）。\)
+
+        使用 $$u_x=cos\phi$$ 表示关于 $$x$$ 轴的方向余弦。然后进行如下定义：
+
+$$
+\psi\triangleq-k_xd=\frac{2\pi}{\lambda}cos\phi\cdot d=\frac{2\pi}{\lambda}u_x\cdot d
+$$
+
+        变量 $$\psi$$ 包含了所有重要的比率 $$d/\lambda$$ 和波达方向 $$u=u_x=cos\phi$$ 。因此 $$\psi$$ 是对需要的所有信息的简要总结而需要计算阵列的灵敏度。波数响应是 $$k_x$$的一个函数，可以表达成：
+
+$$
+\Upsilon(\omega,k_x)=\vec w^H \vec v_k(k_x)=\sum^{N-1}_{n=0}\omega^{*}_ne^{-j(n-\frac{N-1}{2})k_xd}
+$$
+
+        阵列流形向量可以表示为以下不同空间（ $$\phi,u,\psi$$ ）的表达形式：
+
+$$
+[\vec v_{\phi}(\phi)]_n=e^{j(n-\frac{N-1}{2})\frac{2\pi d}{\lambda}cos\phi}\\
+[\vec v_u(u)]_n=e^{j(n-\frac{N-1}{2})\frac{2\pi d}{\lambda}u}\\
+[\vec v_{\psi}(\psi)]_n=e^{j(n-\frac{N-1}{2})\frac{2\pi d}{\lambda}\psi}
+$$
+
+        其中 $$[\cdot]_n$$ 代表相关阵列流形向量的第 $$n$$ 个分量。给出上面这种表示beampattern是有很多原因的。首先，
 
