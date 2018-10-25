@@ -358,8 +358,10 @@ $$
         由此，delay-sum beam pattern可以表示为
 
 $$
-B_{dsb}(\vec k:\vec k_T)\triangleq\frac{1}{N}\vec v_k^H(\vec k_T)\vec v_k(\vec k)|_{\vec k=\vec a(\theta,\phi)}
+B_{dsb}(\vec k:\vec k_T)\triangleq\frac{1}{N}\vec v_k^H(\vec k_T)\vec v_k(\vec k)|_{\vec k=\vec a(\theta,\phi)}\\
+B_{dsb}(\psi:\psi_T)=\frac{1}{N}\vec v^H_{\psi}(\psi_T)\vec v_{\psi}(\psi)=\frac{1}{N}\frac{sin(N\frac{\psi-\psi_T}{2})}{sin(\frac{\psi-\psi_T}{2})}\\
+B_{dsb}(u:u_T)=\frac{1}{N}\vec v_u^H(u_T)\vec v_u(u)=\frac{1}{N}\frac{sin[\frac{\pi Nd}{\lambda}(u-u_T)]}{sin[\frac{\pi d}{\lambda}(u-u_T)]}
 $$
 
-
+        其中侧边角 $$\overline \phi =\phi-\pi/2$$ 根据定义，是相对于 $$y$$ 轴测量的，并且具有与 $$\phi$$ 相同的意义。
 
