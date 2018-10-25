@@ -266,7 +266,7 @@ $$
 \Upsilon(\omega,k_x)=\vec w^H \vec v_k(k_x)=\sum^{N-1}_{n=0}\omega^{*}_ne^{-j(n-\frac{N-1}{2})k_xd}
 $$
 
-        阵列流形向量可以表示为以下不同空间（ $$\phi,u,\psi$$ ）的表达形式：
+        阵列流形向量可以表示为关于以下不同空间（ $$\phi,u,\psi$$ ）的表达形式（其实表示的是同一个东西）：
 
 $$
 [\vec v_{\phi}(\phi)]_n=e^{j(n-\frac{N-1}{2})\frac{2\pi d}{\lambda}cos\phi}\\
@@ -274,5 +274,68 @@ $$
 [\vec v_{\psi}(\psi)]_n=e^{j(n-\frac{N-1}{2})\frac{2\pi d}{\lambda}\psi}
 $$
 
-        其中 $$[\cdot]_n$$ 代表相关阵列流形向量的第 $$n$$ 个分量。给出上面这种表示beampattern是有很多原因的。首先，
+        其中 $$[\cdot]_n$$ 代表相关阵列流形向量的第 $$n$$ 个分量。给出上面这种表示beampattern是有很多原因的。首先， $$\phi$$ 空间是物理波实际传播的空间，因此它是绝对有效的。然后 $$u$$ 空间的表示方法也是有用的。这是由于我们给定定义 $$u \triangleq cos\phi$$ ,在这个空间中操纵波束等于简单的平移beampattern。最后， $$\psi$$ 空间也是很有用的，其中定义直接纳入最重要的比率 $$d/\lambda$$ 在之后讨论波束操纵时会用到。
+
+        根据 $$\psi\triangleq-k_xd=\frac{2\pi}{\lambda}cos\phi\cdot d=\frac{2\pi}{\lambda}u_x\cdot d$$ ，beampattern可以表示为关于以下不同空间（ $$\phi,u,\psi$$ ）的表达形式
+
+$$
+B_\phi(\phi)=\vec w^H\vec v_\phi(\phi)=e^{-j(\frac{N-1}{2})\frac{2\pi d}{\lambda}cos \phi }\sum^{N-1}_{n=0}\omega_n^{*}e^{jn\frac{2\pi d}{\lambda}cos\phi}\\
+B_u(u)=\vec w^H\vec v_u(u)=e^{-j(\frac{N-1}{2})\frac{2\pi d}{\lambda}u }\sum^{N-1}_{n=0}\omega_n^{*}e^{jn\frac{2\pi d}{\lambda}u}\\
+B_\psi(\psi)=\vec w^H\vec v_\psi(\psi)=e^{-j(\frac{N-1}{2})\psi }\sum^{N-1}_{n=0}\omega_n^{*}e^{jn\psi}
+$$
+
+        现在我们引入一个进一步的假设，及所有传感器都是均匀权重的，如下
+
+$$
+\omega_n=\frac{1}{N}\quad\forall n=0,1,...,N-1
+$$
+
+        在这种情况下，在 $$\psi$$ 空间下的波束图可以表示为
+
+$$
+B_\psi(\psi)=\frac{1}{N}e^{-j(\frac{N-1}{2})\psi }\sum^{N-1}_{n=0}e^{jn\psi}\\
+=\frac{1}{N}e^{-j(\frac{N-1}{2})\psi (\frac{1-e^{jN\psi}}{1-e^{j\psi}})}\\
+=\frac{1}{N}e^{-j(\frac{N-1}{2})\psi}\cdot \frac{e^{jN\psi /2}}{e^{j\psi/2}}\cdot \frac{e^{-jN\psi/2}-e^{jN\psi/2}}{e^{-j\psi/2}-e^{j\psi/2}}\\=sinc_N(\frac{\psi}{2})\quad \forall \ -\frac{2\pi d}{\lambda}\leq \psi \leq \frac{2\pi d}{\lambda}
+$$
+
+        其中
+
+$$
+sinc_N(x)\triangleq \frac{1}{N}\frac{sin(Nx)}{sin x}
+$$
+
+        从下面波束图的表达形式可以看到，它是通过线性数轴和分贝轴分别绘制出的，很明显 $$B_{\psi}(\psi)$$ 的周期为从奇数开始的长度为 $$2\pi$$ 。此外， $$B_\psi(\psi)$$ 中的只有在其分子分母均为零时才会取得最大值。\(应用洛必达法则得到\)
+
+![](../.gitbook/assets/20181023-172850-ping-mu-jie-tu.png)
+
+        相应的，在 $$\phi$$ 空间和 $$u$$ 空间，beampattern分别表示为
+
+$$
+B_\phi(\phi)=sinc_N(\frac{\pi d}{\lambda}cos \phi)\quad \forall0\leq\phi\leq\pi\\
+B_u(u)=sinc_N(\frac{\pi d}{\lambda}u)\quad \forall-1\leq u\leq1\\
+$$
+
+        下图将会比较不同空间中的beampattern在不同空间（ $$\phi,u,\psi$$ ）的表达。在这里我们已经给出了波束图的取值范围。正如下图所示，这个范围被称为可视范围，因为这是波实际上传输的范围。但在不同空间（ $$\phi,u,\psi$$ ）中的取值范围包括整个实轴，因此，在可视范围之外的点被我们称为是落在虚拟域中。
+
+        在阵列中提供最大灵敏度的可见区域的部分被称为主瓣。光栅瓣是与主瓣相同高度的旁瓣。如前所述，当 $$sinc_N(x)\triangleq \frac{1}{N}\frac{sin(Nx)}{sin x}$$ 中的分子和分母都为零时，出现这样的波瓣，对于 $$sinc_N(\psi/2)$$ ，其间隔为
+
+$$
+\psi=2\pi m
+$$
+
+        对于奇数 $$N$$，对于方向余弦或者说 $$u$$ 空间，beampattern被指定为 $$B_u(u)=sinc_N(\pi d u/\lambda)$$  。同时，光栅瓣出现在如下值：
+
+$$
+u=\frac{\lambda}{d}m\quad \forall m=1,2,....
+$$
+
+![](../.gitbook/assets/20181024-152341-ping-mu-jie-tu.png)
+
+        光栅波瓣是无害的，只要它们保持在虚拟区域中。然而，如果选择阵列的传感器之间的间距太大，则光栅波瓣可以移动到可见区域。效果如下图所示。确定光栅波瓣进入可见区域的数量是比率 $$d/\lambda$$ 。对于一个均匀分布权重相同的线阵，为了保证没有光栅瓣进入可见区，必须要求 $$d/\lambda \leq 1$$ 。然而，我们很快就会发现，即使满足这个条件，转向也可能导致光栅波瓣移动到可见区域。
+
+![](../.gitbook/assets/20181025-104823-ping-mu-jie-tu.png)
+
+### 1.3 波束转向（相控）
+
+        波束方向图的转向控制通常是在数字层面而不是阵列物理转动层面上完成的，因此阵列可以侦听来自已知或估计位置的声源信息。对于一个平面波，传感器输出由 $$\vec f(t,\vec m)=e^{j\omega t}\vec v_k(\vec k)$$ 给出，我们想使得阵列输出和目标波数 $$\vec k=\vec k_T$$ 时间对齐（目标波数就是主响应轴或者说目标方向）。
 
