@@ -339,3 +339,27 @@ $$
 
         波束方向图的转向控制通常是在数字层面而不是阵列物理转动层面上完成的，因此阵列可以侦听来自已知或估计位置的声源信息。对于一个平面波，传感器输出由 $$\vec f(t,\vec m)=e^{j\omega t}\vec v_k(\vec k)$$ 给出，我们想使得阵列输出和目标波数 $$\vec k=\vec k_T$$ 时间对齐（目标波数就是主响应轴或者说目标方向）。
 
+$$
+f_s(t,\vec m)=e^{j\omega t}\vec v_k(\vec k-\vec k_T)
+$$
+
+        转向后的频域波数响应是
+
+$$
+\Upsilon(\omega,\vec k|\vec k_T)=\Upsilon(\omega,\vec k-\vec k_T)
+$$
+
+        因此，在波数空间中，转向等同于简单的偏移，这是在该空间绘制波束图的主要优点。当delay-sum beamformer指向 $$\vec k=\vec k_T$$ 时，传感器权重为
+
+$$
+\vec w=\frac{1}{N}\vec v_k(\vec k_T)
+$$
+
+        由此，delay-sum beam pattern可以表示为
+
+$$
+B_{dsb}(\vec k:\vec k_T)\triangleq\frac{1}{N}\vec v_k^H(\vec k_T)\vec v_k(\vec k)|_{\vec k=\vec a(\theta,\phi)}
+$$
+
+
+
