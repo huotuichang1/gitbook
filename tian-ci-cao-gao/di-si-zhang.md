@@ -8,7 +8,7 @@ description: Beamforming
 
 ## 1.波束形成基本原理与概念
 
-### 1.1声音的传播和阵列几何位置（同时也涉及到多相滤波，subband的一些概念）
+### 1.1声音的传播和阵列几何位置（这里为了简化说明我们使用线性阵列距离同时也涉及到多相滤波，subband的一些概念）
 
         我们首先来思考一个具有 $$N$$ 个传感器的随机形状的阵列。 我们假设这 $$N$$ 个传感器的坐标 $$\vec m_n$$ 全部已知， $$n=0,1,...,N-1$$ 。传感器接收到的信号可以表示如下：
 
@@ -363,5 +363,17 @@ B_{dsb}(\psi:\psi_T)=\frac{1}{N}\vec v^H_{\psi}(\psi_T)\vec v_{\psi}(\psi)=\frac
 B_{dsb}(u:u_T)=\frac{1}{N}\vec v_u^H(u_T)\vec v_u(u)=\frac{1}{N}\frac{sin[\frac{\pi Nd}{\lambda}(u-u_T)]}{sin[\frac{\pi d}{\lambda}(u-u_T)]}
 $$
 
-        其中侧边角 $$\overline \phi =\phi-\pi/2$$ 根据定义，是相对于 $$y$$ 轴测量的，并且具有与 $$\phi$$ 相同的意义。
+        其中侧边角 $$\overline \phi =\phi-\pi/2$$ 根据定义，是相对于 $$y$$ 轴测量的，并且具有与 $$\phi$$ 相同的意义。下图中说明了侧边角 $$\overline \phi =\phi-\pi/2$$ 对阵列转向的影响。基于在 $$u$$ 空间中转向对应于一个简单的平移的事实，我们可以很容易地发展出出从可见光区排除光栅瓣的要求。在 $$B_{dsb}(u:u_T)=\frac{1}{N}\vec v_u^H(u_T)\vec v_u(u)=\frac{1}{N}\frac{sin[\frac{\pi Nd}{\lambda}(u-u_T)]}{sin[\frac{\pi d}{\lambda}(u-u_T)]}$$ 中用 $$u$$ 代替 $$u-u_T$$ 我们可以发现在第一光栅瓣的位置可以表示为
+
+$$
+u-u_T=\frac{\lambda}{d}
+$$
+
+         因此，要将光栅瓣保持在可见区域之外需要：        
+
+$$
+|u-u_T|\leq \frac{\lambda}{d}
+$$
+
+![](../.gitbook/assets/20181026-110548-ping-mu-jie-tu.png)
 
